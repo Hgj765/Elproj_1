@@ -17,7 +17,7 @@ int qna =0;
 int anser =0;
 
 // heloooeheleoeoehekeo//this is a usles comment and sould be removed//merge conflict
-
+// hej
 unsigned long startTime= millis(); // store start time;
 
 void setup() {
