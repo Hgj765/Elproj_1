@@ -45,13 +45,14 @@ void loop() {
     
   switch (frog)
   {
-  case 0 frog:
+  case 0 :
     /* code */
     timer_mode();
-  case 1 frog:
+    break;
+  case 1 :
     /* code */
     froge_mode();
-  
+    break;
   default:
     break;
   }
