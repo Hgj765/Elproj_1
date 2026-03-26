@@ -16,7 +16,7 @@ int alt_4=7;
 int qna =0;
 int anser =0;
 
-// heloooeheleoeoehekeo//this is a usles comment and sould be removed
+// heloooeheleoeoehekeo//this is a usles comment and sould be removed//merge conflict
 
 unsigned long startTime= millis(); // store start time;
 
