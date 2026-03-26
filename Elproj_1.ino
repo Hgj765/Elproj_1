@@ -4,23 +4,39 @@
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 int timer = 100;
-unsigned long startTime= millis(); // store start time;
+unsigned long startTime; // store start time;
 
+//hehehe
+int question_pin =11;
+int alt_1=10;
+int alt_2=9;
+int alt_3=8;
+int alt_4=7;
 
 void setup() {
-  lcd.init();        
-  lcd.backlight();
-  
-  
+
+    startTime = millis();
+
+    lcd.init();        
+    lcd.backlight();
+    
+    pinMode(alt_1, INPUT);
+    pinMode(alt_2, INPUT);
+    pinMode(alt_3, INPUT);
+    pinMode(alt_4, INPUT);
+    pinMode(question_pin, INPUT);
   
 }
 
 void loop() {
     timer_mode();
+    set_timer();
+    delay(100);
 
 }
 
-void timer_mode(){
+void timer_mode() {
+
     unsigned long currentTime = millis();
   
     unsigned long time_gone = (currentTime - startTime)/1000;
@@ -50,4 +66,23 @@ void timer_mode(){
     lcd.print("S All");
   
   
+}
+
+void set_timer() {
+
+    if (digitalRead(alt_4) == HIGH) // ta bort 10 sek
+    {
+        timer += 10;
+        delay(100);
+        
+
+        }
+
+    if (digitalRead(alt_3) == HIGH) // ta bort 10 sek
+    {
+        timer -= 10;
+        if (timer < 0) timer = 0;
+        delay(100);
+
+    }
 }
