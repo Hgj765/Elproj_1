@@ -25,7 +25,6 @@ void setup() {
   lcd.backlight();
   
   
-  
   pinMode(alt_1, INPUT);
   pinMode(alt_2, INPUT);
   pinMode(alt_3, INPUT);
@@ -91,17 +90,20 @@ void timer_mode(){
   
 
     
-  if (digitalRead(alt_4) == HIGH)
+  if (digitalRead(alt_4) == HIGH) // ta bort 10 sek
     {timer += 10;
-    /*
-    if (frog == 1){frog =0;}
-    else{frog =1;}
-    */
+   
       }
+      
+  if (digitalRead(alt_3) == HIGH) // ta bort 10 sek
+  {
+    timer -= 10;
+    if (timer < 0) timer = 0
+  }
   
   
   unsigned long currentTime = millis();
-  if ((currentTime - startTime)/1000 >= timer) { // 20 minutes
+  if ((currentTime - startTime)/1000 >= timer) {
   
   lcd.setCursor(0, 0);
   lcd.print("Done                ");
