@@ -14,9 +14,10 @@ int alt_3=8;
 int alt_4=7;
 
 int qna =0;
-int anser =0;
+int done =0;
 
-// heloooeheleoeoehekeo//this is a usles comment and sould be removed//merge conflict
+const int motor_pin3 = 3;  
+const int motor_pin4 = 4;
 
 unsigned long startTime= millis(); // store start time;
 
@@ -25,39 +26,62 @@ void setup() {
   lcd.backlight();
   
   
+  
   pinMode(alt_1, INPUT);
   pinMode(alt_2, INPUT);
   pinMode(alt_3, INPUT);
   pinMode(alt_4, INPUT);
   pinMode(frog_pin, INPUT);
+
+  pinMode(motor_pin3, OUTPUT);
+  pinMode(motor_pin4, OUTPUT);
   
   
 }
 
 void loop() {
   
-  
-  if (digitalRead(frog_pin) == HIGH)
-    {   
-    if (frog == 1){frog =0;}
-    else{frog =1;}
-    }
-    
-  switch (frog)
+  switch (done)
   {
-  case 0 :
-    /* code */
-    timer_mode();
-    break;
   case 1 :
-    /* code */
-    froge_mode();
-    break;
-  default:
-    break;
-  }
+    lcd.setCursor(0, 0);
+    lcd.print("Done                ");
+    lcd.setCursor(0, 1);
+    lcd.print("                ");
 
-  delay(100);
+    break;
+  
+  case 0:
+
+    if (digitalRead(frog_pin) == HIGH)
+      {   
+      if (frog == 1){frog =0;}
+      else{frog =1;}
+    }
+      
+
+    
+    switch (frog)
+    {
+    case 0 :
+      /* code */
+      timer_mode();
+      digitalWrite(motor_pin3, LOW);
+      digitalWrite(motor_pin4, HIGH);
+      break;
+    case 1 :
+      /* code */
+      froge_mode();
+      digitalWrite(motor_pin3, HIGH);
+      digitalWrite(motor_pin4, LOW);
+      break;
+    
+    
+    }
+
+    delay(100);
+  break;
+  }
 }
 
 void froge_mode()
@@ -82,7 +106,7 @@ void froge_mode()
   else{qna =0;}
   if (digitalRead(alt_1) == HIGH)
   { 
-    frog=0;      
+    done = 1      
   }
 
       }
@@ -91,25 +115,19 @@ void timer_mode(){
   
 
     
-  if (digitalRead(alt_4) == HIGH) // ta bort 10 sek
+  if (digitalRead(alt_4) == HIGH)
     {timer += 10;
-   
+    /*
+    if (frog == 1){frog =0;}
+    else{frog =1;}
+    */
       }
-      
-  if (digitalRead(alt_3) == HIGH) // ta bort 10 sek
-  {
-    timer -= 10;
-    if (timer < 0) timer = 0
-  }
   
   
   unsigned long currentTime = millis();
-  if ((currentTime - startTime)/1000 >= timer) {
+  if ((currentTime - startTime)/1000 >= timer) { // 20 minutes
+    done = 1
   
-  lcd.setCursor(0, 0);
-  lcd.print("Done                ");
-  lcd.setCursor(0, 1);
-  lcd.print("                ");
   
   
     }
