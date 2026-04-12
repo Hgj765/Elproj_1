@@ -3,6 +3,8 @@
 // Efter timern är klar står det klar
 // Visar återstående tid
 
+// jag gjorde en funktion för vad som händer när timern är klar
+
 // ska vara pullup istället för pulldown (active low??)
 // undvik flickering på något sätt
 // man kan inte skriva å, ä, ö och förmodligen inga fancy matte tecken. lös eller tänk på att använda en annan sorts skärm 
@@ -33,6 +35,10 @@ int alt_2=9;
 int alt_4=8;
 int alt_5=7;
 int led=2;
+
+const int motor_pin3 = 3;  
+const int motor_pin4 = 4;
+
 
 int timer_on =0;
 
@@ -139,7 +145,7 @@ void set_timer() {
 
     
 
-    // notera att det ska vara pin 3 och 4 istället för 4 och 5 efter jag fixat kretsen
+    // notera att det ska vara "alt" 3 och 4 istället för 4 och 5 efter jag fixat kretsen
     if (digitalRead(alt_4) == HIGH) // ta bort 10 sek
     {
         if (timer > 0) timer -= 10;
@@ -175,7 +181,7 @@ void timer_done(unsigned long elapsed, int timer) {
         lcd.print("                   ");
 
 
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 8; i++) {
       digitalWrite(led, HIGH);
       delay(500);
       digitalWrite(led, LOW);
