@@ -1,3 +1,10 @@
+// Elproj_1
+// Kan lägga till och ta bort 10 sekunder från tiden. Inga negativa tider
+// Setup mode - vill inte att den ska kunna gå minustid
+// något ska hända när timern är klar
+// Vill byta till hur lång tid som är kvar istället
+// ska vara pullup istället för pulldown (active low??)
+
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
@@ -34,7 +41,7 @@ void loop() {
     switch (timer_on)
     {
         case 0:
-        set_timer();//if the timer isnt on then the setup timer is sown 
+        set_timer();//if the timer isnt on then the setup timer is shown 
         
         break;
     case 1:
@@ -103,18 +110,19 @@ void set_timer() {
     if (digitalRead(alt_4) == HIGH) // ta bort 10 sek
     {
         timer -= 10;
+        if (timer < 0) timer = 0;
         delay(100);
       
         }
 
-    if (digitalRead(alt_3) == HIGH) // ta bort 10 sek
+    if (digitalRead(alt_3) == HIGH) // lägg till 10 sek
     {
         timer += 10;
-        if (timer < 0) timer = 0;
         delay(100);
 
     }
-    if (digitalRead(alt_1) == HIGH) // ta bort 10 sek
+
+    if (digitalRead(alt_1) == HIGH) // confirm tid
     {
         timer_on=1;
         delay(100);
