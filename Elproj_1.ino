@@ -1,8 +1,12 @@
 // Elproj_1
 // Kan lägga till och ta bort 10 sekunder från tiden. Inga negativa tider
-// något ska hända när timern är klar
+// Efter timern är klar står det klar
 // Visar återstående tid
+
 // ska vara pullup istället för pulldown (active low??)
+// undvik flickering på något sätt
+// man kan inte skriva å, ä, ö och förmodligen inga fancy matte tecken. lös eller tänk på att använda en annan sorts skärm 
+
 
 
 #include <Wire.h>
@@ -12,6 +16,7 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 int timer = 60;
 unsigned long startTime; // store start time;
+
 
 /*
 int question_pin =11;
@@ -27,6 +32,7 @@ int alt_1=10;
 int alt_2=9;
 int alt_4=8;
 int alt_5=7;
+int led=2;
 
 int timer_on =0;
 
@@ -48,6 +54,7 @@ void setup() {
     pinMode(alt_4, INPUT);
     pinMode(alt_5, INPUT);
     pinMode(question_pin, INPUT);
+    pinMode(led, OUTPUT);
   
 }
 
@@ -61,6 +68,8 @@ void loop() {
     case 1:
         timer_mode();//if the timer is on the timer/question in shown
         break;
+
+    
     }
     
     
@@ -69,9 +78,7 @@ void loop() {
 }
 
 void timer_mode() {
-
     unsigned long currentTime = millis();
-  
     unsigned long elapsed = (currentTime - startTime) / 1000;
     unsigned long time_left = (elapsed >= timer) ? 0 : timer - elapsed; 
     // när passerad tid större än/lika med inställd tid = visa 0
@@ -82,26 +89,32 @@ void timer_mode() {
     int hours = time_left / 3600;
     
     lcd.setCursor(0, 0);
+    lcd.print(hours < 10 ? "0" : "");
     lcd.print(hours);
-    lcd.print("H: ");
+    lcd.print(":");
+    lcd.print(minutes < 10 ? "0" : "");
     lcd.print(minutes);
-    lcd.print("M: ");
+    lcd.print(":");
+    lcd.print(seconds < 10 ? "0" : "");
     lcd.print(seconds);
-    lcd.print("S Past");
+    lcd.print(" Kvar    ");
     
     seconds = timer % 60;
     minutes = (timer / 60) % 60;
     hours = timer / 3600;
     
     lcd.setCursor(0, 1);
+    lcd.print(hours < 10 ? "0" : "");
     lcd.print(hours);
-    lcd.print("H: ");
+    lcd.print(":");
+    lcd.print(minutes < 10 ? "0" : "");
     lcd.print(minutes);
-    lcd.print("M: ");
+    lcd.print(":");
+    lcd.print(seconds < 10 ? "0" : "");
     lcd.print(seconds);
-    lcd.print("S All");
-  
-  
+    lcd.print(" Totalt   ");
+    
+    timer_done(elapsed, timer);
 }
 
 void set_timer() {
@@ -111,23 +124,25 @@ void set_timer() {
     int hours = timer / 3600;
 
     lcd.setCursor(0, 0);
+    lcd.print(hours < 10 ? "0" : "");
     lcd.print(hours);
-    lcd.print("H: ");
+    lcd.print(":");
+    lcd.print(minutes < 10 ? "0" : "");
     lcd.print(minutes);
-    lcd.print("M: ");
+    lcd.print(":");
+    lcd.print(seconds < 10 ? "0" : "");
     lcd.print(seconds);
-    lcd.print("S All");
+    lcd.print(" Totalt   ");
 
     lcd.setCursor(0, 1);
-    lcd.print("-10 +10 c    ");
+    lcd.print("-10 +10 OK       ");
 
     
 
     // notera att det ska vara pin 3 och 4 istället för 4 och 5 efter jag fixat kretsen
     if (digitalRead(alt_4) == HIGH) // ta bort 10 sek
     {
-        timer -= 10;
-        if (timer < 0) timer = 0;
+        if (timer > 0) timer -= 10;
         delay(100);
       
         }
@@ -148,4 +163,25 @@ void set_timer() {
     }
 
 
+}
+
+void timer_done(unsigned long elapsed, int timer) {
+// visar att tiden är ute. stannar på den sidan i 8s innan den går tillbaka till setup mode
+    if (elapsed > timer) {
+        timer_on = 2;
+        lcd.setCursor(0, 0);
+        lcd.print("KLAR! :D           ");
+        lcd.setCursor(0, 1);
+        lcd.print("                   ");
+
+
+    for (int i = 0; i < 10; i++) {
+      digitalWrite(led, HIGH);
+      delay(500);
+      digitalWrite(led, LOW);
+      delay(500);
+  }
+        timer_on = 0;
+
+    }
 }
