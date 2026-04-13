@@ -1,9 +1,11 @@
 // Elproj_1
 // Kan lägga till och ta bort 10 sekunder från tiden. Inga negativa tider
-// Efter timern är klar står det klar
+// Efter timern är klar står det klar och lampa blinkar
 // Visar återstående tid
+// Kan växla till frågeläge skärm
 
 // jag gjorde en funktion för vad som händer när timern är klar
+// daniel får skriva in outputsen till motorn
 
 // ska vara pullup istället för pulldown (active low??)
 // undvik flickering på något sätt
@@ -16,7 +18,7 @@
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-int timer = 60;
+int timer = 0; // om man börjar på 0 får man inte konstiga negativa tider
 unsigned long startTime; // store start time;
 
 
@@ -28,14 +30,15 @@ int alt_3=8;
 int alt_4=7;
 */
 
-// omdefinierar pinsen för en inte funkar och jag kan inte fixa
 int question_pin =11;
 int alt_1=10;
 int alt_2=9;
-int alt_4=8;
-int alt_5=7;
+int alt_3=8;
+int alt_4=7;
 int led=2;
+int led2=12;
 
+// MOTOR
 const int motor_pin3 = 3;  
 const int motor_pin4 = 4;
 
@@ -47,22 +50,24 @@ void setup() {
     lcd.init();        
     lcd.backlight();
 
-    /*
+    
     pinMode(alt_1, INPUT);
     pinMode(alt_2, INPUT);
     pinMode(alt_3, INPUT);
     pinMode(alt_4, INPUT);
     pinMode(question_pin, INPUT);
-    */
-
-    pinMode(alt_1, INPUT);
-    pinMode(alt_2, INPUT);
-    pinMode(alt_4, INPUT);
-    pinMode(alt_5, INPUT);
-    pinMode(question_pin, INPUT);
     pinMode(led, OUTPUT);
+    pinMode(led2, OUTPUT);
+
+    // MOTOR
+    pinMode(motor_pin3, OUTPUT);
+    pinMode(motor_pin4, OUTPUT);
   
 }
+
+
+
+// TIMERMODE
 
 void loop() {
     switch (timer_on)
@@ -73,12 +78,15 @@ void loop() {
         break;
     case 1:
         timer_mode();//if the timer is on the timer/question in shown
+    
         break;
 
+    case 2:
+        question_mode();
+        break;
     
     }
-    
-    
+
     delay(100);
 
 }
@@ -119,6 +127,13 @@ void timer_mode() {
     lcd.print(seconds < 10 ? "0" : "");
     lcd.print(seconds);
     lcd.print(" Totalt   ");
+
+    if (digitalRead(question_pin) == HIGH) {
+        timer_on=2;
+        delay(200);
+        return;
+
+    }
     
     timer_done(elapsed, timer);
 }
@@ -141,19 +156,18 @@ void set_timer() {
     lcd.print(" Totalt   ");
 
     lcd.setCursor(0, 1);
-    lcd.print("-10 +10 OK       ");
+    lcd.print("OK -10 +10       ");
 
     
 
-    // notera att det ska vara "alt" 3 och 4 istället för 4 och 5 efter jag fixat kretsen
-    if (digitalRead(alt_4) == HIGH) // ta bort 10 sek
+    if (digitalRead(alt_2) == HIGH) // ta bort 10 sek
     {
         if (timer > 0) timer -= 10;
         delay(100);
       
         }
 
-    if (digitalRead(alt_5) == HIGH) // lägg till 10 sek
+    if (digitalRead(alt_3) == HIGH) // lägg till 10 sek
     {
         timer += 10;
         delay(100);
@@ -168,26 +182,55 @@ void set_timer() {
 
     }
 
+    if (digitalRead(question_pin) == HIGH && timer_on != 0)
+    {
+        timer_on=2;
+        delay(100);
+    }
+
 
 }
 
 void timer_done(unsigned long elapsed, int timer) {
 // visar att tiden är ute. stannar på den sidan i 8s innan den går tillbaka till setup mode
     if (elapsed > timer) {
-        timer_on = 2;
         lcd.setCursor(0, 0);
         lcd.print("KLAR! :D           ");
         lcd.setCursor(0, 1);
         lcd.print("                   ");
 
 
-    for (int i = 0; i < 8; i++) {
-      digitalWrite(led, HIGH);
-      delay(500);
-      digitalWrite(led, LOW);
-      delay(500);
-  }
-        timer_on = 0;
-
+    for (int i = 0; i < 5; i++) {
+        digitalWrite(led, HIGH);
+        delay(500);
+        digitalWrite(led, LOW);
+        delay(500);
     }
+    
+    timer_on = 0;
+    
+    }
+
+
+}
+
+
+// FRÅGEMODE
+
+
+void question_mode() {
+    lcd.setCursor(0, 0);
+    lcd.print("question               ");
+    lcd.setCursor(0, 1);
+    lcd.print("abcd                ");
+
+    
+    if (digitalRead(question_pin) == HIGH) {
+        timer_on = 1;       // go back to timer
+        delay(200);
+        return;
+    }
+
+    unsigned long elapsed = (millis() - startTime) / 1000;
+    timer_done(elapsed, timer);
 }
