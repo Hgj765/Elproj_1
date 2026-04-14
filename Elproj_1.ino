@@ -2,7 +2,8 @@
 // Kan lägga till och ta bort 10 sekunder från tiden. Inga negativa tider
 // Efter timern är klar står det klar och lampa blinkar
 // Visar återstående tid
-// Kan växla till frågeläge skärm
+// Kan växla till frågeläge skärm (gjort så man endast kan göra det i timerläge, ej i setup)
+// Kan växla mellan frågor och svar
 
 // jag gjorde en funktion för vad som händer när timern är klar
 // daniel får skriva in outputsen till motorn
@@ -10,6 +11,12 @@
 // ska vara pullup istället för pulldown (active low??)
 // undvik flickering på något sätt
 // man kan inte skriva å, ä, ö och förmodligen inga fancy matte tecken. lös eller tänk på att använda en annan sorts skärm 
+// kanske behöver byta språk till engelska men vore synd
+
+// den ska kunna veta när något behöver flera rader? eller man ska kunna ha frågor med fler än 16x2 tecken
+// något ska hända när man trycker på rätt svar. en annan fråga ska komma upp
+// den ska kunna dra frågor från frågebank
+
 
 
 
@@ -22,14 +29,6 @@ int timer = 0; // om man börjar på 0 får man inte konstiga negativa tider
 unsigned long startTime; // store start time;
 
 
-/*
-int question_pin =11;
-int alt_1=10;
-int alt_2=9;
-int alt_3=8;
-int alt_4=7;
-*/
-
 int question_pin =11;
 int alt_1=10;
 int alt_2=9;
@@ -38,6 +37,7 @@ int alt_4=7;
 int led=2;
 int led2=12;
 
+int question_time = 0; 
 // MOTOR
 const int motor_pin3 = 3;  
 const int motor_pin4 = 4;
@@ -182,7 +182,7 @@ void set_timer() {
 
     }
 
-    if (digitalRead(question_pin) == HIGH && timer_on != 0)
+    if (digitalRead(question_pin) == HIGH && timer_on != 0) // gå till frågemode
     {
         timer_on=2;
         delay(100);
@@ -219,11 +219,12 @@ void timer_done(unsigned long elapsed, int timer) {
 
 
 void question_mode() {
-    lcd.setCursor(0, 0);
+    /* lcd.setCursor(0, 0);
     lcd.print("question               ");
     lcd.setCursor(0, 1);
-    lcd.print("abcd                ");
+    lcd.print("abcd                "); */
 
+    show_qna();
     
     if (digitalRead(question_pin) == HIGH) {
         timer_on = 1;       // go back to timer
@@ -233,4 +234,30 @@ void question_mode() {
 
     unsigned long elapsed = (millis() - startTime) / 1000;
     timer_done(elapsed, timer);
+}
+
+
+// växlar mellan frågor och svar- vill att den ska kunna visa mer än 1 sida av frågor och svar, vill att något ska hända efter input
+void show_qna() {
+    if (question_time <50)
+    {
+        question_time +=1;
+        lcd.setCursor(0, 0);
+        lcd.print("Py=24kW Uhe=400V");
+        lcd.setCursor(0, 1);
+        lcd.print("P om D-koppling?");
+    }
+    else if (question_time >= 50 && question_time <= 100 )
+    {
+        lcd.setCursor(0, 0);
+        lcd.print("A:72kW B:32kW          ");
+        lcd.setCursor(0, 1);
+        lcd.print("C:56kW D:14kW         ");
+        question_time +=1;
+    }
+
+  else{question_time = 0;}
+
+// problem- den resettar inte question_time efter tiden är ute. den resettar inte inställda tiden heller
+
 }
