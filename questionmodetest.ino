@@ -1,6 +1,13 @@
 // testar kod for frågeläge
 // man kan spara i Progmem och man kan kontrollera vad som visas
 
+// TODO
+// kunna visa 3 svar, gå framåt om man 
+// en fråga ska visas. svar ska visas. svar ska väljas. vilket ska få nästa fråga att visas
+// om användaren har fel eller rätt ska sparas
+
+// en till skärm med svårighetsuppskattning ska visas
+
 
 
 
@@ -12,19 +19,13 @@
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-// spara frågor
-// algoritm för att visa frågor
-
 // varje objekt har
 // fråga
 // svarsalternativ
 // korrekt svar
 // användarens rating - det enda som ändras
 
-// allt förutom användarens rating kan vara i progmem ist för eeprom
-
-// progmem delen
-// antag att varje fråga är 1 rad
+// allt förutom användarens rating kan vara i progmem istället för eeprom
 
 int question_pin =11;
 int alt_1=10;
@@ -34,32 +35,29 @@ int alt_4=7;
 int led=2;
 int led2=12;
 
-const char q00[] PROGMEM = "0. 16 symbols???";
-const char qa00[] PROGMEM = "A0.ans";
-const char qb00[] PROGMEM = "B0.ans";
-const char qc00[] PROGMEM = "C0.ans";
-const char qd00[] PROGMEM = "D0.ans";
+const char q000[] PROGMEM = "0. this is a 32 ";
+const char q001[] PROGMEM = "symbol0question?";
+const char qab00[] PROGMEM = "A0.ans B0.ans   ";
+const char qcd00[] PROGMEM = "C0.ans D0.ans   ";
 
-const char q01[] PROGMEM = "1. 16 symbols???";
-const char qa01[] PROGMEM = "A1.ans";
-const char qb01[] PROGMEM = "B1.ans";
-const char qc01[] PROGMEM = "C1.ans";
-const char qd01[] PROGMEM = "D1.ans";
+const char q010[] PROGMEM = "1. this is a 32 ";
+const char q011[] PROGMEM = "symbol1question?";
+const char qab01[] PROGMEM = "A1.ans B1.ans   ";
+const char qcd01[] PROGMEM = "C1.ans D1.ans   ";
 
-const char q02[] PROGMEM = "2. 16 symbols???";
-const char qa02[] PROGMEM = "A2.ans";
-const char qb02[] PROGMEM = "B2.ans";
-const char qc02[] PROGMEM = "C2.ans";
-const char qd02[] PROGMEM = "D2.ans";
+const char q020[] PROGMEM = "2. this is a 32 ";
+const char q021[] PROGMEM = "symbol2question?";
+const char qab02[] PROGMEM = "A2.ans B2.ans   ";
+const char qcd02[] PROGMEM = "C2.ans D2.ans   ";
 
 const uint8_t correctAns[] PROGMEM = {0, 2, 1}; // rätt svar är 0.A, 1.C, 2.B
 
 // pointers
-const char* const question[] PROGMEM = {q00, q01, q02};
-const char* const optionA[] PROGMEM = {qa00, qa01, qa02};
-const char* const optionB[] PROGMEM = {qb00, qb01, qb02};
-const char* const optionC[] PROGMEM = {qc00, qc01, qc02};
-const char* const optionD[] PROGMEM = {qd00, qd01, qd02};
+const char* const question_r0[] PROGMEM = {q000, q010, q020};
+const char* const question_r1[] PROGMEM = {q001, q011, q021};
+
+const char* const optionAB[] PROGMEM = {qab00, qab01, qab02};
+const char* const optionCD[] PROGMEM = {qcd00, qcd01, qcd02};
 
 char buf[17];
 
@@ -78,17 +76,25 @@ void setup() {
 }
 
 void loop() {
-    printProgmem(question, 0, 0);
-    printProgmem(optionA, 0, 1);
+    printAns();
 
+}
+
+void printQue() {
+    printProgmem(question_r0, 0, 0);
+    printProgmem(question_r1, 0, 1);
+}
+
+void printAns() {
+    printProgmem(optionAB, 0, 0)
+    printProgmem(optionCD, 0, 1)
 }
 
 void printProgmem(const char* const* table, int index, int row) {
     strcpy_P(buf, (char*)pgm_read_word(&table[index]));
     lcd.setCursor(0, row);
     lcd.print(buf);
-    
-    //for (int i = strlen(buf); i < 16; i++) lcd.print(' ');
+
 }
 
 

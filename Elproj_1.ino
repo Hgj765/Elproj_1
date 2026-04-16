@@ -38,12 +38,44 @@ int led=2;
 int led2=12;
 
 int question_time = 0; 
+int timer_on =0;
+
 // MOTOR
 const int motor_pin3 = 3;  
 const int motor_pin4 = 4;
 
 
-int timer_on =0;
+
+///////////// FRÅGELÄGE ///////////////////////////////
+const char q000[] PROGMEM = "0. this is a 32 ";
+const char q001[] PROGMEM = "symbol0question?";
+const char qab00[] PROGMEM = "A0.ans B0.ans   ";
+const char qcd00[] PROGMEM = "C0.ans D0.ans   ";
+
+const char q010[] PROGMEM = "1. this is a 32 ";
+const char q011[] PROGMEM = "symbol1question?";
+const char qab01[] PROGMEM = "A1.ans B1.ans   ";
+const char qcd01[] PROGMEM = "C1.ans D1.ans   ";
+
+const char q020[] PROGMEM = "2. this is a 32 ";
+const char q021[] PROGMEM = "symbol2question?";
+const char qab02[] PROGMEM = "A2.ans B2.ans   ";
+const char qcd02[] PROGMEM = "C2.ans D2.ans   ";
+
+const uint8_t correctAns[] PROGMEM = {0, 2, 1}; // rätt svar är 0.A, 1.C, 2.B
+
+// pointers
+const char* const question_r0[] PROGMEM = {q000, q010, q020};
+const char* const question_r1[] PROGMEM = {q001, q011, q021};
+
+const char* const optionAB[] PROGMEM = {qab00, qab01, qab02};
+const char* const optionCD[] PROGMEM = {qcd00, qcd01, qcd02};
+
+char buf[17];
+////////////////////////////////////////////////////////////
+
+
+
 
 void setup() {
 
@@ -217,7 +249,6 @@ void timer_done(unsigned long elapsed, int timer) {
 
 // FRÅGEMODE
 
-
 void question_mode() {
     /* lcd.setCursor(0, 0);
     lcd.print("question               ");
@@ -236,23 +267,33 @@ void question_mode() {
     timer_done(elapsed, timer);
 }
 
+void printQue() {
+    printProgmem(question_r0, 0, 0);
+    printProgmem(question_r1, 0, 1);
+}
+
+void printAns() {
+    printProgmem(optionAB, 0, 0);
+    printProgmem(optionCD, 0, 1);
+}
+
+void printProgmem(const char* const* table, int index, int row) {
+    strcpy_P(buf, (char*)pgm_read_word(&table[index]));
+    lcd.setCursor(0, row);
+    lcd.print(buf);
+
+}
 
 // växlar mellan frågor och svar- vill att den ska kunna visa mer än 1 sida av frågor och svar, vill att något ska hända efter input
 void show_qna() {
     if (question_time <50)
     {
         question_time +=1;
-        lcd.setCursor(0, 0);
-        lcd.print("Py=24kW Uhe=400V");
-        lcd.setCursor(0, 1);
-        lcd.print("P om D-koppling?");
+        printQue();
     }
     else if (question_time >= 50 && question_time <= 100 )
     {
-        lcd.setCursor(0, 0);
-        lcd.print("A:72kW B:32kW          ");
-        lcd.setCursor(0, 1);
-        lcd.print("C:56kW D:14kW         ");
+        printAns();
         question_time +=1;
     }
 
