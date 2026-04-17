@@ -4,6 +4,8 @@
 // Visar återstående tid
 // Kan växla till frågeläge skärm (gjort så man endast kan göra det i timerläge, ej i setup)
 // Kan växla mellan frågor och svar
+// Kan visa frågor sparade på minnet
+// Kan visa tre frågor efter varandra
 
 // jag gjorde en funktion för vad som händer när timern är klar
 // daniel får skriva in outputsen till motorn
@@ -39,6 +41,7 @@ int led2=12;
 
 int question_time = 0; 
 int timer_on =0;
+int index=0;
 
 // MOTOR
 const int motor_pin3 = 3;  
@@ -115,6 +118,9 @@ void loop() {
 
     case 2:
         question_mode();
+        break;
+    case 3:
+        feedback_mode();
         break;
     
     }
@@ -232,7 +238,7 @@ void timer_done(unsigned long elapsed, int timer) {
         lcd.print("                   ");
 
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < 2; i++) {
         digitalWrite(led, HIGH);
         delay(500);
         digitalWrite(led, LOW);
@@ -240,6 +246,8 @@ void timer_done(unsigned long elapsed, int timer) {
     }
     
     timer_on = 0;
+    index = 0;
+    question_time = 0;
     
     }
 
@@ -250,12 +258,9 @@ void timer_done(unsigned long elapsed, int timer) {
 // FRÅGEMODE
 
 void question_mode() {
-    /* lcd.setCursor(0, 0);
-    lcd.print("question               ");
-    lcd.setCursor(0, 1);
-    lcd.print("abcd                "); */
 
     show_qna();
+    choose_ans();
     
     if (digitalRead(question_pin) == HIGH) {
         timer_on = 1;       // go back to timer
@@ -267,16 +272,6 @@ void question_mode() {
     timer_done(elapsed, timer);
 }
 
-void printQue() {
-    printProgmem(question_r0, 0, 0);
-    printProgmem(question_r1, 0, 1);
-}
-
-void printAns() {
-    printProgmem(optionAB, 0, 0);
-    printProgmem(optionCD, 0, 1);
-}
-
 void printProgmem(const char* const* table, int index, int row) {
     strcpy_P(buf, (char*)pgm_read_word(&table[index]));
     lcd.setCursor(0, row);
@@ -284,7 +279,17 @@ void printProgmem(const char* const* table, int index, int row) {
 
 }
 
-// växlar mellan frågor och svar- vill att den ska kunna visa mer än 1 sida av frågor och svar, vill att något ska hända efter input
+void printQue() {
+    printProgmem(question_r0, index, 0);
+    printProgmem(question_r1, index, 1);
+}
+
+void printAns() {
+    printProgmem(optionAB, index, 0);
+    printProgmem(optionCD, index, 1);
+}
+
+
 void show_qna() {
     if (question_time <50)
     {
@@ -296,9 +301,50 @@ void show_qna() {
         printAns();
         question_time +=1;
     }
+    else{question_time = 0;}
+}
 
-  else{question_time = 0;}
+
+
+void choose_ans() { // kommer eventuellt kontrollera om trycket är rätt svar
+    if (digitalRead(alt_1) == HIGH){
+        question_time = 0; // för hur länge "correct!" ska visas sen
+        timer_on = 3; // gå till feedback mode
+    }
+
+    
+}
+
+void feedback_mode() {
+    // om rätt - säger correct, om fel - inget händer for now
+    
+    // correct visas i 2 sek
+    if (question_time <= 20) {
+        lcd.setCursor(0, 0);
+        lcd.print("correct!           ");
+        lcd.setCursor(0, 1);
+        lcd.print("                   ");
+        question_time++;
+    }
+
+    else {
+        if (index == 2) { // kollar om man är på sista frågan
+        timer = 0; // sätt timer till 0
+        timer_on = 1; // går till timermode
+
+        timer_done(timer + 1, timer);  // forcar att tiden ska ta slut
+        return;
+        }
+        // om vi inte är på sista frågan
+        index++;                
+        question_time = 0; // nollställ tid som feedback mode visas
+        timer_on = 2; // gå tbx till question mode
+    }
+
+}
+
+
+
 
 // problem- den resettar inte question_time efter tiden är ute. den resettar inte inställda tiden heller
 
-}
