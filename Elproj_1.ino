@@ -6,6 +6,7 @@
 // Kan växla mellan frågor och svar
 // Kan visa frågor sparade på minnet
 // Kan visa tre frågor efter varandra
+// Kan visa att den är klar efter 3 rätta svar (efter 3 tryck på alt A)
 
 // jag gjorde en funktion för vad som händer när timern är klar
 // daniel får skriva in outputsen till motorn
@@ -14,10 +15,25 @@
 // undvik flickering på något sätt
 // man kan inte skriva å, ä, ö och förmodligen inga fancy matte tecken. lös eller tänk på att använda en annan sorts skärm 
 // kanske behöver byta språk till engelska men vore synd
-
 // den ska kunna veta när något behöver flera rader? eller man ska kunna ha frågor med fler än 16x2 tecken
-// något ska hända när man trycker på rätt svar. en annan fråga ska komma upp
-// den ska kunna dra frågor från frågebank
+// den resettar inte question_time efter tiden är ute. den resettar inte inställda tiden heller. sluta
+// får den plats med 20 frågor?
+// default tid på 25 min. max tid 10 timmar
+
+// den ska kunna dra 3 frågor från frågebank
+// den ska kunna spara användarens input om rätt och fel ?? EEPROM SKITEN?
+
+
+// fråga, svarsalternativ, rätt svar, vikt
+// lätt = 1, mellan = 2, svår = 3, oprövad/fel = 4
+// TODO
+// 1. X skriv fler frågor + skriva vikter till alla (skriv till progmem)
+// 2. skriva algoritm som slumpar fram 3 styck från vikter
+// 3. den ska fatta att man skrivit rätt eller fel
+// 4. saker ska sparas i eeprom orkar inte tänka på det
+
+
+
 
 
 
@@ -47,7 +63,10 @@ int index=0;
 const int motor_pin3 = 3;  
 const int motor_pin4 = 4;
 
-
+#define NUM_QUESTIONS 7
+int selectedQuestions[3];
+bool usedInSession[NUM_QUESTIONS];
+int sessionIndex = 0;
 
 ///////////// FRÅGELÄGE ///////////////////////////////
 const char q000[] PROGMEM = "0. this is a 32 ";
@@ -65,17 +84,39 @@ const char q021[] PROGMEM = "symbol2question?";
 const char qab02[] PROGMEM = "A2.ans B2.ans   ";
 const char qcd02[] PROGMEM = "C2.ans D2.ans   ";
 
-const uint8_t correctAns[] PROGMEM = {0, 2, 1}; // rätt svar är 0.A, 1.C, 2.B
+const char q030[] PROGMEM = "3. this is a 32 ";
+const char q031[] PROGMEM = "symbol3question?";
+const char qab03[] PROGMEM = "A3.ans B3.ans   ";
+const char qcd03[] PROGMEM = "C3.ans D3.ans   ";
+
+const char q040[] PROGMEM = "4. this is a 32 ";
+const char q041[] PROGMEM = "symbol4question?";
+const char qab04[] PROGMEM = "A4.ans B4.ans   ";
+const char qcd04[] PROGMEM = "C4.ans D4.ans   ";
+
+const char q050[] PROGMEM = "5. this is a 32 ";
+const char q051[] PROGMEM = "symbol5question?";
+const char qab05[] PROGMEM = "A5.ans B5.ans   ";
+const char qcd05[] PROGMEM = "C5.ans D5.ans   ";
+
+const char q060[] PROGMEM = "6 this is a 32 ";
+const char q061[] PROGMEM = "symbol6question?";
+const char qab06[] PROGMEM = "A6.ans B6.ans   ";
+const char qcd06[] PROGMEM = "C6.ans D6.ans   ";
+
+const uint8_t correctAns[] PROGMEM = {0, 2, 1, 2, 3, 0, 3}; // rätt svar är 0.A, 1.C, 2.B
+const uint8_t weight[] PROGMEM = {1, 2, 3, 4, 1, 2, 3};
 
 // pointers
-const char* const question_r0[] PROGMEM = {q000, q010, q020};
-const char* const question_r1[] PROGMEM = {q001, q011, q021};
+const char* const question_r0[] PROGMEM = {q000, q010, q020, q030, q040, q050, q060};
+const char* const question_r1[] PROGMEM = {q001, q011, q021, q031, q041, q051, q061};
 
-const char* const optionAB[] PROGMEM = {qab00, qab01, qab02};
-const char* const optionCD[] PROGMEM = {qcd00, qcd01, qcd02};
+const char* const optionAB[] PROGMEM = {qab00, qab01, qab02, qab03, qab04, qab05, qab06};
+const char* const optionCD[] PROGMEM = {qcd00, qcd01, qcd02, qcd03, qcd04, qcd05, qcd06};
 
 char buf[17];
 ////////////////////////////////////////////////////////////
+
 
 
 
@@ -93,6 +134,8 @@ void setup() {
     pinMode(question_pin, INPUT);
     pinMode(led, OUTPUT);
     pinMode(led2, OUTPUT);
+
+    randomSeed(analogRead(A0));
 
     // MOTOR
     pinMode(motor_pin3, OUTPUT);
@@ -168,6 +211,7 @@ void timer_mode() {
 
     if (digitalRead(question_pin) == HIGH) {
         timer_on=2;
+        pick3Questions();
         delay(200);
         return;
 
@@ -223,6 +267,7 @@ void set_timer() {
     if (digitalRead(question_pin) == HIGH && timer_on != 0) // gå till frågemode
     {
         timer_on=2;
+        //pick3Questions();
         delay(100);
     }
 
@@ -230,7 +275,7 @@ void set_timer() {
 }
 
 void timer_done(unsigned long elapsed, int timer) {
-// visar att tiden är ute. stannar på den sidan i 8s innan den går tillbaka till setup mode
+// visar att tiden är ute. stannar på den sidan i några sekunder innan den går tillbaka till setup mode
     if (elapsed > timer) {
         lcd.setCursor(0, 0);
         lcd.print("KLAR! :D           ");
@@ -245,12 +290,13 @@ void timer_done(unsigned long elapsed, int timer) {
         delay(500);
     }
     
+
+    // nästa fråga
     timer_on = 0;
     index = 0;
     question_time = 0;
     
     }
-
 
 }
 
@@ -304,7 +350,7 @@ void show_qna() {
     else{question_time = 0;}
 }
 
-
+// jag vill göra så att olika saker händer vid rätt och fel svar
 
 void choose_ans() { // kommer eventuellt kontrollera om trycket är rätt svar
     if (digitalRead(alt_1) == HIGH){
@@ -328,23 +374,77 @@ void feedback_mode() {
     }
 
     else {
-        if (index == 2) { // kollar om man är på sista frågan
-        timer = 0; // sätt timer till 0
-        timer_on = 1; // går till timermode
+        sessionIndex++;
 
-        timer_done(timer + 1, timer);  // forcar att tiden ska ta slut
-        return;
+        if (sessionIndex >= 3) {
+            // session done
+            timer_on = 1; // back to timer
+            sessionIndex = 0;
+            return;
+        } 
+        index = selectedQuestions[sessionIndex];
+        question_time = 0;
+        timer_on = 2;
         }
-        // om vi inte är på sista frågan
-        index++;                
-        question_time = 0; // nollställ tid som feedback mode visas
-        timer_on = 2; // gå tbx till question mode
     }
 
+
+
+//oklart
+
+void resetSession() {
+    // kollar om den är med i sessionen
+    for (int i = 0; i < NUM_QUESTIONS; i++) {
+        usedInSession[i] = false;
+    }
 }
 
+int pickWeightedQuestion() {
+    int total = 0;
+
+    for (int i = 0; i < NUM_QUESTIONS; i++) {
+        // ser till så att den inte redan är med i omgången. summerar ihop alla vikter
+        if (!usedInSession[i]) {
+            total += pgm_read_byte(&weight[i]);
+        }
+    }
+
+   
+    if (total == 0) return 0; // säkerhetsskull
+    int r = random(total); // random nummer mellan 0-total
+
+    for (int i = 0; i < NUM_QUESTIONS; i++) {
+        // subtrahera vikt från random tal. frågan som random tal blir negativ är frågan som ska visas
+        if (usedInSession[i]) continue;
+
+                uint8_t w = pgm_read_byte(&weight[i]); 
+
+
+        if (r < w) {
+            usedInSession[i] = true;
+            return i;
+        }
+        r -= w;
+    }
+
+    return 0;
+}
+
+void pick3Questions() {
+    // välj 3 styck
+    resetSession();
+
+    for (int i = 0; i < 3; i++) {
+        selectedQuestions[i] = pickWeightedQuestion();
+    }
+
+    sessionIndex = 0;
+    index = selectedQuestions[0];
+    question_time = 0;
+}
+    
 
 
 
-// problem- den resettar inte question_time efter tiden är ute. den resettar inte inställda tiden heller
 
+/////// PROBLEM!!!!!!!!!! den slutar inte efter man gjort 3 frågor
