@@ -2,7 +2,7 @@
 // man kan spara i Progmem och man kan kontrollera vad som visas
 
 // TODO
-// kunna visa 3 svar, gå framåt om man 
+// kunna visa 3 svar, gå framåt om man svarar rätt
 // en fråga ska visas. svar ska visas. svar ska väljas. vilket ska få nästa fråga att visas
 // om användaren har fel eller rätt ska sparas
 

@@ -7,6 +7,7 @@
 // Kan visa frågor sparade på minnet
 // Kan visa tre frågor efter varandra
 // Kan visa att den är klar efter 3 rätta svar (efter 3 tryck på alt A)
+// Kan välja 3 frågor baserat på vikt.
 
 // jag gjorde en funktion för vad som händer när timern är klar
 // daniel får skriva in outputsen till motorn
@@ -20,7 +21,6 @@
 // får den plats med 20 frågor?
 // default tid på 25 min. max tid 10 timmar
 
-// den ska kunna dra 3 frågor från frågebank
 // den ska kunna spara användarens input om rätt och fel ?? EEPROM SKITEN?
 
 
@@ -28,7 +28,7 @@
 // lätt = 1, mellan = 2, svår = 3, oprövad/fel = 4
 // TODO
 // 1. X skriv fler frågor + skriva vikter till alla (skriv till progmem)
-// 2. skriva algoritm som slumpar fram 3 styck från vikter
+// 2. X skriva algoritm som slumpar fram 3 styck från vikter
 // 3. den ska fatta att man skrivit rätt eller fel
 // 4. saker ska sparas i eeprom orkar inte tänka på det
 
@@ -357,7 +357,6 @@ void choose_ans() { // kommer eventuellt kontrollera om trycket är rätt svar
         question_time = 0; // för hur länge "correct!" ska visas sen
         timer_on = 3; // gå till feedback mode
     }
-
     
 }
 
@@ -378,19 +377,21 @@ void feedback_mode() {
 
         if (sessionIndex >= 3) {
             // session done
-            timer_on = 1; // back to timer
+            timer_done(timer + 1, timer);
+            timer_on = 0; // back to timer
             sessionIndex = 0;
+            question_time = 0;
+            index = 0;
             return;
+
         } 
+
+
         index = selectedQuestions[sessionIndex];
         question_time = 0;
         timer_on = 2;
         }
     }
-
-
-
-//oklart
 
 void resetSession() {
     // kollar om den är med i sessionen
@@ -443,8 +444,3 @@ void pick3Questions() {
     question_time = 0;
 }
     
-
-
-
-
-/////// PROBLEM!!!!!!!!!! den slutar inte efter man gjort 3 frågor

@@ -1,166 +1,268 @@
-// gammal kod??
+// Elproj_1
+// Kan lägga till och ta bort 10 sekunder från tiden. Inga negativa tider
+// Efter timern är klar står det klar och lampa blinkar
+// Visar återstående tid
+// Kan växla till frågeläge skärm (gjort så man endast kan göra det i timerläge, ej i setup)
+// Kan växla mellan frågor och svar
+
+// jag gjorde en funktion för vad som händer när timern är klar
+// daniel får skriva in outputsen till motorn
+
+// ska vara pullup istället för pulldown (active low??)
+// undvik flickering på något sätt
+// man kan inte skriva å, ä, ö och förmodligen inga fancy matte tecken. lös eller tänk på att använda en annan sorts skärm 
+// kanske behöver byta språk till engelska men vore synd
+
+// den ska kunna veta när något behöver flera rader? eller man ska kunna ha frågor med fler än 16x2 tecken
+// något ska hända när man trycker på rätt svar. en annan fråga ska komma upp
+// den ska kunna dra frågor från frågebank
+
+
+
+
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
-int frog = 0;
-int timer = 100;
 
-int frog_pin =11;
+int timer = 0; // om man börjar på 0 får man inte konstiga negativa tider
+unsigned long startTime; // store start time;
 
 
+int question_pin =11;
 int alt_1=10;
 int alt_2=9;
 int alt_3=8;
 int alt_4=7;
+int led=2;
+int led2=12;
 
-int qna =0;
-int done =0;
-
+int question_time = 0; 
+// MOTOR
 const int motor_pin3 = 3;  
 const int motor_pin4 = 4;
 
-unsigned long startTime= millis(); // store start time;
+char question1_0[] = "Py=24kW Uhe=400V";
+char question1_1[] = "P om D-koppling?";
+char answers1_0[] = "A:72kW B:32kW          ";
+char answers1_1[] = "C:56kW D:14kW         ";
+
+int timer_on =0;
 
 void setup() {
-  lcd.init();        
-  lcd.backlight();
-  
-  
-  
-  pinMode(alt_1, INPUT);
-  pinMode(alt_2, INPUT);
-  pinMode(alt_3, INPUT);
-  pinMode(alt_4, INPUT);
-  pinMode(frog_pin, INPUT);
 
-  pinMode(motor_pin3, OUTPUT);
-  pinMode(motor_pin4, OUTPUT);
-  
+    lcd.init();        
+    lcd.backlight();
+
+    
+    pinMode(alt_1, INPUT);
+    pinMode(alt_2, INPUT);
+    pinMode(alt_3, INPUT);
+    pinMode(alt_4, INPUT);
+    pinMode(question_pin, INPUT);
+    pinMode(led, OUTPUT);
+    pinMode(led2, OUTPUT);
+
+    // MOTOR
+    pinMode(motor_pin3, OUTPUT);
+    pinMode(motor_pin4, OUTPUT);
   
 }
 
+
+
+// TIMERMODE
+
 void loop() {
-  
-  switch (done)
-  {
-  case 1 :
-    lcd.setCursor(0, 0);
-    lcd.print("Done                ");
-    lcd.setCursor(0, 1);
-    lcd.print("                ");
-
-    break;
-  
-  case 0:
-
-    if (digitalRead(frog_pin) == HIGH)
-      {   
-      if (frog == 1){frog =0;}
-      else{frog =1;}
-    }
-      
-
-    
-    switch (frog)
+    switch (timer_on)
     {
-    case 0 :
-      /* code */
-      timer_mode();
-      digitalWrite(motor_pin3, LOW);
-      digitalWrite(motor_pin4, HIGH);
-      break;
-    case 1 :
-      /* code */
-      froge_mode();
-      digitalWrite(motor_pin3, HIGH);
-      digitalWrite(motor_pin4, LOW);
-      break;
+        case 0:
+        set_timer();//if the timer isnt on then the setup timer is shown 
+        
+        break;
+    case 1:
+        timer_mode();//if the timer is on the timer/question in shown
     
+        break;
+
+    case 2:
+        question_mode();
+        break;
     
     }
 
     delay(100);
-  break;
-  }
+
 }
 
-void froge_mode()
-{
-  if (100 >= qna >=50)
-  {
-    qna +=1;
+void timer_mode() {
+    unsigned long currentTime = millis();
+    unsigned long elapsed = (currentTime - startTime) / 1000;
+    unsigned long time_left = (elapsed >= timer) ? 0 : timer - elapsed; 
+    // när passerad tid större än/lika med inställd tid = visa 0
+    // när passerad tid < inställd tid = visa återstående tid
+
+    int seconds = time_left % 60;
+    int minutes = (time_left / 60) % 60;
+    int hours = time_left / 3600;
+    
     lcd.setCursor(0, 0);
-    lcd.print("fancy question        ");
+    lcd.print(hours < 10 ? "0" : "");
+    lcd.print(hours);
+    lcd.print(":");
+    lcd.print(minutes < 10 ? "0" : "");
+    lcd.print(minutes);
+    lcd.print(":");
+    lcd.print(seconds < 10 ? "0" : "");
+    lcd.print(seconds);
+    lcd.print(" Kvar    ");
+    
+    seconds = timer % 60;
+    minutes = (timer / 60) % 60;
+    hours = timer / 3600;
+    
     lcd.setCursor(0, 1);
-    lcd.print("whats the answer          ");
-  }
-  else if (qna < 50){
-  lcd.setCursor(0, 0);
-  lcd.print("Alternatives        ");
+    lcd.print(hours < 10 ? "0" : "");
+    lcd.print(hours);
+    lcd.print(":");
+    lcd.print(minutes < 10 ? "0" : "");
+    lcd.print(minutes);
+    lcd.print(":");
+    lcd.print(seconds < 10 ? "0" : "");
+    lcd.print(seconds);
+    lcd.print(" Totalt   ");
 
-  lcd.setCursor(0, 1);
-  lcd.print("A B  C  D          ");
-  qna +=1;
-  }
+    if (digitalRead(question_pin) == HIGH) {
+        timer_on=2;
+        delay(200);
+        return;
 
-  else{qna =0;}
-  if (digitalRead(alt_1) == HIGH)
-  { 
-    done = 1      
-  }
-
-      }
-
-void timer_mode(){
-  
-
-    
-  if (digitalRead(alt_4) == HIGH)
-    {timer += 10;
-    /*
-    if (frog == 1){frog =0;}
-    else{frog =1;}
-    */
-      }
-  
-  
-  unsigned long currentTime = millis();
-  if ((currentTime - startTime)/1000 >= timer) { // 20 minutes
-    done = 1
-  
-  
-  
     }
-  else{
     
-    
-  unsigned long time_gone = (currentTime - startTime)/1000;
+    timer_done(elapsed, timer);
+}
 
-  int seconds = time_gone % 60;
-  int minutes = (time_gone / 60) % 60;
-  int hours = time_gone / 3600;
-  
-  lcd.setCursor(0, 0);
-  lcd.print(hours);
-  lcd.print("H: ");
-  lcd.print(minutes);
-  lcd.print("M: ");
-  lcd.print(seconds);
-  lcd.print("S Past");
-  
-  seconds = timer % 60;
-  minutes = (timer / 60) % 60;
-  hours = timer / 3600;
-  
-  lcd.setCursor(0, 1);
-  lcd.print(hours);
-  lcd.print("H: ");
-  lcd.print(minutes);
-  lcd.print("M: ");
-  lcd.print(seconds);
-  lcd.print("S All");
-  
-  
-  }
+void set_timer() {
+
+    int seconds = timer % 60;
+    int minutes = (timer / 60) % 60;
+    int hours = timer / 3600;
+
+    lcd.setCursor(0, 0);
+    lcd.print(hours < 10 ? "0" : "");
+    lcd.print(hours);
+    lcd.print(":");
+    lcd.print(minutes < 10 ? "0" : "");
+    lcd.print(minutes);
+    lcd.print(":");
+    lcd.print(seconds < 10 ? "0" : "");
+    lcd.print(seconds);
+    lcd.print(" Totalt   ");
+
+    lcd.setCursor(0, 1);
+    lcd.print("OK -10 +10       ");
+
+    
+
+    if (digitalRead(alt_2) == HIGH) // ta bort 10 sek
+    {
+        if (timer > 0) timer -= 10;
+        delay(100);
+      
+        }
+
+    if (digitalRead(alt_3) == HIGH) // lägg till 10 sek
+    {
+        timer += 10;
+        delay(100);
+
+    }
+
+    if (digitalRead(alt_1) == HIGH) // confirm tid
+    {
+        startTime = millis();
+        timer_on=1;
+        delay(100);
+
+    }
+
+    if (digitalRead(question_pin) == HIGH && timer_on != 0) // gå till frågemode
+    {
+        timer_on=2;
+        delay(100);
+    }
+
+
+}
+
+void timer_done(unsigned long elapsed, int timer) {
+// visar att tiden är ute. stannar på den sidan i 8s innan den går tillbaka till setup mode
+    if (elapsed > timer) {
+        lcd.setCursor(0, 0);
+        lcd.print("KLAR! :D           ");
+        lcd.setCursor(0, 1);
+        lcd.print("                   ");
+
+
+    for (int i = 0; i < 5; i++) {
+        digitalWrite(led, HIGH);
+        delay(500);
+        digitalWrite(led, LOW);
+        delay(500);
+    }
+    
+    timer_on = 0;
+    
+    }
+
+
+}
+
+
+// FRÅGEMODE
+
+
+
+void question_mode() {
+    /* lcd.setCursor(0, 0);
+    lcd.print("question               ");
+    lcd.setCursor(0, 1);
+    lcd.print("abcd                "); */
+
+    show_qna();
+    
+    if (digitalRead(question_pin) == HIGH) {
+        timer_on = 1;       // go back to timer
+        delay(200);
+        return;
+    }
+
+    unsigned long elapsed = (millis() - startTime) / 1000;
+    timer_done(elapsed, timer);
+}
+
+
+// växlar mellan frågor och svar- vill att den ska kunna visa mer än 1 sida av frågor och svar, vill att något ska hända efter input
+void show_qna() {
+    if (question_time <50)
+    {
+        question_time +=1;
+        lcd.setCursor(0, 0);
+        lcd.print(question1_0);
+        lcd.setCursor(0, 1);
+        lcd.print(question1_1);
+    }
+    else if (question_time >= 50 && question_time <= 100 )
+    {
+        lcd.setCursor(0, 0);
+        lcd.print(answers1_0);
+        lcd.setCursor(0, 1);
+        lcd.print(answers1_1);
+        question_time +=1;
+    }
+
+  else{question_time = 0;}
+
+// problem- den resettar inte question_time efter tiden är ute. den resettar inte inställda tiden heller
+
 }
