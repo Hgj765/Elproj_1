@@ -507,4 +507,18 @@ void pick3Questions() {
     index = selectedQuestions[0];
     question_time = 0;
 }
-    
+
+void open(){
+
+        digitalWrite(motor_pin3, HIGH);
+        digitalWrite(motor_pin4, LOW);
+        delay(6000)
+        digitalWrite(motor_pin3, LOW);
+}
+void close(){
+
+        digitalWrite(motor_pin4, HIGH);
+        digitalWrite(motor_pin3, LOW);
+        delay(6000)
+        digitalWrite(motor_pin4, LOW);
+}
