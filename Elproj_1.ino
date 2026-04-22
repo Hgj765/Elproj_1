@@ -523,32 +523,4 @@ void close(){
         digitalWrite(motor_pin4, LOW);
 }
 
-void open(){
-
-        digitalWrite(motor_pin3, HIGH);
-        digitalWrite(motor_pin4, LOW);
-        delay(6000)
-        digitalWrite(motor_pin3, LOW);
-}
-void close(){
-
-        digitalWrite(motor_pin4, HIGH);
-        digitalWrite(motor_pin3, LOW);
-        delay(6000)
-        digitalWrite(motor_pin4, LOW);
-}
-
-void open(){
-
-        digitalWrite(motor_pin3, HIGH);
-        digitalWrite(motor_pin4, LOW);
-        delay(6000)
-        digitalWrite(motor_pin3, LOW);
-}
-void close(){
-
-        digitalWrite(motor_pin4, HIGH);
-        digitalWrite(motor_pin3, LOW);
-        delay(6000)
-        digitalWrite(motor_pin4, LOW);
-}
+// kollar om git fortfarande är uppfuckad
