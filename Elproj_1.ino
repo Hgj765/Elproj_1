@@ -29,7 +29,7 @@
 // 1. X skriv fler frågor + skriva vikter till alla (skriv till progmem)
 // 2. X skriva algoritm som slumpar fram 3 styck från vikter
 // 3. X kolla så man kan få plats med alla frågor
-// 4. correct ska bara visas om det är rätt svar
+// 4. X correct ska bara visas om det är rätt svar
 // 5. den ska fråga hur svår frågan var
 // 6. den ska typ spara hur svårt användaren tycker den var??
 // 
@@ -469,24 +469,36 @@ void feedback_mode() {
     // om rätt - säger correct, om fel - inget händer for now
     
     // correct visas i 2 sek
-    if (question_time <= 20) {
+    if (question_time <= 10) {
         lcd.setCursor(0, 0);
 
         if (AnsCorrect) {
-            lcd.print("correct!           ");
+            lcd.print("Correct!         ");
+            lcd.setCursor(0, 1);
+            lcd.print("                   ");
+            
         } else {
-            lcd.print("WRONG >:(          ");
+            lcd.print("Incorrect         ");
+            lcd.setCursor(0, 1);
+            lcd.print("                 ");
         }
         
-        lcd.setCursor(0, 1);
-        lcd.print("                   ");
         question_time++;
         return;
     }
 
+     if (AnsCorrect){
+        if (question_time <= 30) {
+                lcd.setCursor(0, 0);
+                lcd.print("How hard was    ");
+                lcd.setCursor(0, 1);
+                lcd.print("this question?  ");
+                question_time++;
+                return;
+        }
+            }
 
-    else {
-        sessionIndex++;
+    sessionIndex++;
 
         
         
@@ -497,21 +509,24 @@ void feedback_mode() {
             timer_on = 0; // back to timer
             return;
             }
+
         timer_on = 1;
-        timer += 60000; // jag vill bara se om det sysn
+        timer += 300; 
         sessionIndex = 0;
         question_time = 0;
         index = 0;
         return;
 
         }
+
+    index = selectedQuestions[sessionIndex];
+        question_time = 0;
+        timer_on = 2;
     }
 
 
-        index = selectedQuestions[sessionIndex];
-        question_time = 0;
-        timer_on = 2;
-        }
+        
+        
     
 
 void resetSession() {
@@ -565,6 +580,12 @@ void pick3Questions() {
     question_time = 0;
 }
 
+
+
+
+
+
+
 void open(){
 
         digitalWrite(motor_pin3, HIGH);
@@ -579,3 +600,4 @@ void close(){
         delay(6000);
         digitalWrite(motor_pin4, LOW);
 }
+
