@@ -493,7 +493,7 @@ void feedback_mode() {
                 lcd.setCursor(0, 1);
                 lcd.print("this question?  ");
 
-            if (digitalRead(alt_1) == HIGH) {
+            if (digitalRead(alt_1) == HIGH || digitalRead(alt_2) == HIGH || digitalRead(alt_3) == HIGH || digitalRead(alt_4) == HIGH) {
                 sessionIndex++;
 
                 if (sessionIndex >= 3) { // om sista fråga gå till timer mode och resetta
