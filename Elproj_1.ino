@@ -9,17 +9,14 @@
 // Kan visa att den är klar efter 3 rätta svar (efter 3 tryck på alt A)
 // Kan välja 3 frågor baserat på vikt.
 
-// jag gjorde en funktion för vad som händer när timern är klar
-// daniel får skriva in outputsen till motorn
-
 // ska vara pullup istället för pulldown (active low??)
 // undvik flickering på något sätt
 // man kan inte skriva å, ä, ö och förmodligen inga fancy matte tecken. lös eller tänk på att använda en annan sorts skärm 
-// kanske behöver byta språk till engelska men vore synd
 // den ska kunna veta när något behöver flera rader? eller man ska kunna ha frågor med fler än 16x2 tecken
 // den resettar inte question_time efter tiden är ute. den resettar inte inställda tiden heller. sluta
 // får den plats med 20 frågor?
 // default tid på 25 min. max tid 10 timmar
+// den ska autoöppna i början??  motor grejer jag behöver hjälp
 
 // den ska kunna spara användarens input om rätt och fel ?? EEPROM SKITEN?
 
@@ -29,8 +26,12 @@
 // TODO
 // 1. X skriv fler frågor + skriva vikter till alla (skriv till progmem)
 // 2. X skriva algoritm som slumpar fram 3 styck från vikter
-// 3. den ska fatta att man skrivit rätt eller fel
-// 4. saker ska sparas i eeprom orkar inte tänka på det
+// 3. kolla så man kan få plats med alla frågor
+// 4. correct ska bara visas om det är rätt svar
+// 5. den ska fråga hur svår frågan var
+// 6. den ska 
+// 
+// 
 
 
 
@@ -63,7 +64,7 @@ int index=0;
 const int motor_pin3 = 3;  
 const int motor_pin4 = 4;
 
-#define NUM_QUESTIONS 7
+#define NUM_QUESTIONS 20
 int selectedQuestions[3];
 bool usedInSession[NUM_QUESTIONS];
 int sessionIndex = 0;
@@ -124,59 +125,61 @@ const char q101[] PROGMEM = "symbol10question";
 const char qab10[] PROGMEM = "A10ans B10ans   ";
 const char qcd10[] PROGMEM = "C10ans D10ans   ";
 
-const char q040[] PROGMEM = "4. this is a 32 ";
-const char q041[] PROGMEM = "symbol4question?";
-const char qab04[] PROGMEM = "A4.ans B4.ans   ";
-const char qcd04[] PROGMEM = "C4.ans D4.ans   ";
+const char q110[] PROGMEM = "11. this is a 32 ";
+const char q111[] PROGMEM = "symbo11question?";
+const char qab11[] PROGMEM = "A11ans B11ans   ";
+const char qcd11[] PROGMEM = "C4.ans D4.ans   ";
 
-const char q050[] PROGMEM = "5. this is a 32 ";
-const char q051[] PROGMEM = "symbol5question?";
-const char qab05[] PROGMEM = "A5.ans B5.ans   ";
-const char qcd05[] PROGMEM = "C5.ans D5.ans   ";
+const char q120[] PROGMEM = "12 this is a 32 ";
+const char q121[] PROGMEM = "symbol5question?";
+const char qab12[] PROGMEM = "A12ans B5.ans   ";
+const char qcd12[] PROGMEM = "C12ans D5.ans   ";
 
-const char q060[] PROGMEM = "6 this is a 32 ";
-const char q061[] PROGMEM = "symbol6question?";
-const char qab06[] PROGMEM = "A6.ans B6.ans   ";
-const char qcd06[] PROGMEM = "C6.ans D6.ans   ";
-const char q000[] PROGMEM = "0. this is a 32 ";
-const char q001[] PROGMEM = "symbol0question?";
-const char qab00[] PROGMEM = "A0.ans B0.ans   ";
-const char qcd00[] PROGMEM = "C0.ans D0.ans   ";
+const char q130[] PROGMEM = "13this is a 32 ";
+const char q131[] PROGMEM = "symbol6question?";
+const char qab13[] PROGMEM = "A13ans B6.ans   ";
+const char qcd13[] PROGMEM = "C13ans D6.ans   ";
 
-const char q010[] PROGMEM = "1. this is a 32 ";
-const char q011[] PROGMEM = "symbol1question?";
-const char qab01[] PROGMEM = "A1.ans B1.ans   ";
-const char qcd01[] PROGMEM = "C1.ans D1.ans   ";
+const char q140[] PROGMEM = "14this is a 32 ";
+const char q141[] PROGMEM = "symbol0question?";
+const char qab14[] PROGMEM = "A14ans B0.ans   ";
+const char qcd14[] PROGMEM = "C14ans D0.ans   ";
 
-const char q020[] PROGMEM = "2. this is a 32 ";
-const char q021[] PROGMEM = "symbol2question?";
-const char qab02[] PROGMEM = "A2.ans B2.ans   ";
-const char qcd02[] PROGMEM = "C2.ans D2.ans   ";
+const char q150[] PROGMEM = "15this is a 32 ";
+const char q151[] PROGMEM = "symbol1question?";
+const char qab15[] PROGMEM = "A15ans B1.ans   ";
+const char qcd15[] PROGMEM = "C15ans D1.ans   ";
 
-const char q030[] PROGMEM = "3. this is a 32 ";
-const char q031[] PROGMEM = "symbol3question?";
-const char qab03[] PROGMEM = "A3.ans B3.ans   ";
-const char qcd03[] PROGMEM = "C3.ans D3.ans   ";
+const char q160[] PROGMEM = "16this is a 32 ";
+const char q161[] PROGMEM = "symbol2question?";
+const char qab16[] PROGMEM = "A16ans B2.ans   ";
+const char qcd16[] PROGMEM = "C16ans D2.ans   ";
 
-const char q040[] PROGMEM = "4. this is a 32 ";
-const char q041[] PROGMEM = "symbol4question?";
-const char qab04[] PROGMEM = "A4.ans B4.ans   ";
-const char qcd04[] PROGMEM = "C4.ans D4.ans   ";
+const char q170[] PROGMEM = "17this is a 32 ";
+const char q171[] PROGMEM = "symbol3question?";
+const char qab17[] PROGMEM = "A17ans B3.ans   ";
+const char qcd17[] PROGMEM = "C17ans D3.ans   ";
 
-const char q050[] PROGMEM = "5. this is a 32 ";
-const char q051[] PROGMEM = "symbol5question?";
-const char qab05[] PROGMEM = "A5.ans B5.ans   ";
-const char qcd05[] PROGMEM = "C5.ans D5.ans   ";
+const char q180[] PROGMEM = "18this is a 32 ";
+const char q181[] PROGMEM = "symbol4question?";
+const char qab18[] PROGMEM = "A18ans B4.ans   ";
+const char qcd18[] PROGMEM = "C18ans D4.ans   ";
 
-const uint8_t correctAns[] PROGMEM = {0, 2, 1, 2, 3, 0, 3}; // rätt svar är 0.A, 1.C, 2.B
-const uint8_t weight[] PROGMEM = {1, 2, 3, 4, 1, 2, 3};
+const char q190[] PROGMEM = "19this is a 32 ";
+const char q191[] PROGMEM = "symbol5question?";
+const char qab19[] PROGMEM = "A19ans B5.ans   ";
+const char qcd19[] PROGMEM = "C19ans D5.ans   ";
+//                             fråga: 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19
+const uint8_t correctAns[] PROGMEM = {0, 2, 1, 2, 3, 0, 3, 2, 3, 1, 0, 2, 1, 2, 0, 2, 1, 0, 2, 3}; // rätt svar är 0.A, 1.C, 2.B
+//                         fråga: 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19
+const uint8_t weight[] PROGMEM = {1, 2, 3, 4, 1, 2, 3, 2, 1, 4, 2, 4, 1, 4, 2, 3, 4, 2, 1, 4};
 
 // pointers
-const char* const question_r0[] PROGMEM = {q000, q010, q020, q030, q040, q050, q060};
-const char* const question_r1[] PROGMEM = {q001, q011, q021, q031, q041, q051, q061};
+const char* const question_r0[] PROGMEM = {q000, q010, q020, q030, q040, q050, q060, q070, q080, q090, q100, q110, q120, q130, q140, q150, q160, q170, q180, q190};
+const char* const question_r1[] PROGMEM = {q001, q011, q021, q031, q041, q051, q061, q071, q081, q091, q101, q111, q121, q131, q141, q151, q161, q171, q181, q191};
 
-const char* const optionAB[] PROGMEM = {qab00, qab01, qab02, qab03, qab04, qab05, qab06};
-const char* const optionCD[] PROGMEM = {qcd00, qcd01, qcd02, qcd03, qcd04, qcd05, qcd06};
+const char* const optionAB[] PROGMEM = {qab00, qab01, qab02, qab03, qab04, qab05, qab06, qab07, qab08, qab09, qab10, qab11, qab12, qab13, qab14, qab15, qab16, qab17, qab18, qab19};
+const char* const optionCD[] PROGMEM = {qcd00, qcd01, qcd02, qcd03, qcd04, qcd05, qcd06, qcd07, qcd08, qcd09, qcd10, qcd11, qcd12, qcd13, qcd14, qcd15, qcd16, qcd17, qcd18, qcd19};
 
 char buf[17];
 ////////////////////////////////////////////////////////////
@@ -189,6 +192,8 @@ void setup() {
 
     lcd.init();        
     lcd.backlight();
+    //close();
+    //open();
 
     
     pinMode(alt_1, INPUT);
@@ -345,7 +350,7 @@ void timer_done(unsigned long elapsed, int timer) {
         lcd.print("KLAR! :D           ");
         lcd.setCursor(0, 1);
         lcd.print("                   ");
-
+        
 
     for (int i = 0; i < 2; i++) {
         digitalWrite(led, HIGH);
@@ -512,14 +517,14 @@ void open(){
 
         digitalWrite(motor_pin3, HIGH);
         digitalWrite(motor_pin4, LOW);
-        delay(6000)
+        delay(6000);
         digitalWrite(motor_pin3, LOW);
 }
 void close(){
 
         digitalWrite(motor_pin4, HIGH);
         digitalWrite(motor_pin3, LOW);
-        delay(6000)
+        delay(6000);
         digitalWrite(motor_pin4, LOW);
 }
 
