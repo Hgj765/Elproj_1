@@ -99,10 +99,74 @@ const char q051[] PROGMEM = "symbol5question?";
 const char qab05[] PROGMEM = "A5.ans B5.ans   ";
 const char qcd05[] PROGMEM = "C5.ans D5.ans   ";
 
+const char q060[] PROGMEM = "6. this is a 32 ";
+const char q061[] PROGMEM = "symbol6question?";
+const char qab06[] PROGMEM = "A6.ans B6.ans   ";
+const char qcd06[] PROGMEM = "C6.ans D6.ans   ";
+
+const char q070[] PROGMEM = "7. this is a 32 ";
+const char q071[] PROGMEM = "symbol7question?";
+const char qab07[] PROGMEM = "A7.ans B7.ans   ";
+const char qcd07[] PROGMEM = "C7.ans D7.ans   ";
+
+const char q080[] PROGMEM = "8. this is a 32 ";
+const char q081[] PROGMEM = "symbol8question?";
+const char qab08[] PROGMEM = "A8.ans B8.ans   ";
+const char qcd08[] PROGMEM = "C8.ans D8.ans   ";
+
+const char q090[] PROGMEM = "9. this is a 32 ";
+const char q091[] PROGMEM = "symbol9question?";
+const char qab09[] PROGMEM = "A9.ans B9.ans   ";
+const char qcd09[] PROGMEM = "C9.ans D9.ans   ";
+
+const char q100[] PROGMEM = "10.this is a 32 ";
+const char q101[] PROGMEM = "symbol10question";
+const char qab10[] PROGMEM = "A10ans B10ans   ";
+const char qcd10[] PROGMEM = "C10ans D10ans   ";
+
+const char q040[] PROGMEM = "4. this is a 32 ";
+const char q041[] PROGMEM = "symbol4question?";
+const char qab04[] PROGMEM = "A4.ans B4.ans   ";
+const char qcd04[] PROGMEM = "C4.ans D4.ans   ";
+
+const char q050[] PROGMEM = "5. this is a 32 ";
+const char q051[] PROGMEM = "symbol5question?";
+const char qab05[] PROGMEM = "A5.ans B5.ans   ";
+const char qcd05[] PROGMEM = "C5.ans D5.ans   ";
+
 const char q060[] PROGMEM = "6 this is a 32 ";
 const char q061[] PROGMEM = "symbol6question?";
 const char qab06[] PROGMEM = "A6.ans B6.ans   ";
 const char qcd06[] PROGMEM = "C6.ans D6.ans   ";
+const char q000[] PROGMEM = "0. this is a 32 ";
+const char q001[] PROGMEM = "symbol0question?";
+const char qab00[] PROGMEM = "A0.ans B0.ans   ";
+const char qcd00[] PROGMEM = "C0.ans D0.ans   ";
+
+const char q010[] PROGMEM = "1. this is a 32 ";
+const char q011[] PROGMEM = "symbol1question?";
+const char qab01[] PROGMEM = "A1.ans B1.ans   ";
+const char qcd01[] PROGMEM = "C1.ans D1.ans   ";
+
+const char q020[] PROGMEM = "2. this is a 32 ";
+const char q021[] PROGMEM = "symbol2question?";
+const char qab02[] PROGMEM = "A2.ans B2.ans   ";
+const char qcd02[] PROGMEM = "C2.ans D2.ans   ";
+
+const char q030[] PROGMEM = "3. this is a 32 ";
+const char q031[] PROGMEM = "symbol3question?";
+const char qab03[] PROGMEM = "A3.ans B3.ans   ";
+const char qcd03[] PROGMEM = "C3.ans D3.ans   ";
+
+const char q040[] PROGMEM = "4. this is a 32 ";
+const char q041[] PROGMEM = "symbol4question?";
+const char qab04[] PROGMEM = "A4.ans B4.ans   ";
+const char qcd04[] PROGMEM = "C4.ans D4.ans   ";
+
+const char q050[] PROGMEM = "5. this is a 32 ";
+const char q051[] PROGMEM = "symbol5question?";
+const char qab05[] PROGMEM = "A5.ans B5.ans   ";
+const char qcd05[] PROGMEM = "C5.ans D5.ans   ";
 
 const uint8_t correctAns[] PROGMEM = {0, 2, 1, 2, 3, 0, 3}; // rätt svar är 0.A, 1.C, 2.B
 const uint8_t weight[] PROGMEM = {1, 2, 3, 4, 1, 2, 3};
