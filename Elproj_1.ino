@@ -8,6 +8,8 @@
 // Kan visa tre frågor efter varandra
 // Kan visa att den är klar efter 3 rätta svar (efter 3 tryck på alt A)
 // Kan välja 3 frågor baserat på vikt.
+// Kan förstå när man trycker på rätt och fel svar
+// Kan lägga till 5 min vid fel svar
 
 // ska vara pullup istället för pulldown (active low??)
 // undvik flickering på något sätt
@@ -64,6 +66,7 @@ int index=0;
 const int motor_pin3 = 3;  
 const int motor_pin4 = 4;
 bool AnsCorrect = false;
+int correctSoFar = 0;
 
 #define NUM_QUESTIONS 20
 int selectedQuestions[3];
@@ -431,25 +434,32 @@ void choose_ans() {
     if (digitalRead(alt_1) == HIGH) {
         AnsCorrect = (correct == 0);
         timer_on = 3;
+     
         
     }
     else if (digitalRead(alt_2) == HIGH) {
         AnsCorrect = (correct == 1);
         timer_on = 3;
-        
+
     }
     else if (digitalRead(alt_3) == HIGH) {
         AnsCorrect = (correct == 2);
         timer_on = 3;
+  
     
     }
     else if (digitalRead(alt_4) == HIGH) {
         AnsCorrect = (correct == 3);
         timer_on = 3;
+        
     }
 
     if (timer_on == 3) {
+        if (AnsCorrect) {
+            correctSoFar++;
+        }
         question_time = 0;
+      
     }
 }
 
@@ -478,23 +488,31 @@ void feedback_mode() {
     else {
         sessionIndex++;
 
+        
+        
         if (sessionIndex >= 3) {
+            if (correctSoFar >= 3) {
             // session done
             timer_done(timer + 1, timer);
             timer_on = 0; // back to timer
-            sessionIndex = 0;
-            question_time = 0;
-            index = 0;
             return;
+            }
+        timer_on = 1;
+        timer += 60000; // jag vill bara se om det sysn
+        sessionIndex = 0;
+        question_time = 0;
+        index = 0;
+        return;
 
-        } 
+        }
+    }
 
 
         index = selectedQuestions[sessionIndex];
         question_time = 0;
         timer_on = 2;
         }
-    }
+    
 
 void resetSession() {
     // kollar om den är med i sessionen
@@ -561,5 +579,3 @@ void close(){
         delay(6000);
         digitalWrite(motor_pin4, LOW);
 }
-
-// kollar om git fortfarande är uppfuckad
