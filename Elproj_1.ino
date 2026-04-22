@@ -487,16 +487,35 @@ void feedback_mode() {
         return;
     }
 
-     if (AnsCorrect){
-        if (question_time <= 30) {
+     if (AnsCorrect && question_time > 10) {
                 lcd.setCursor(0, 0);
                 lcd.print("How hard was    ");
                 lcd.setCursor(0, 1);
                 lcd.print("this question?  ");
+
+            if (digitalRead(alt_1) == HIGH) {
+                sessionIndex++;
+
+                if (sessionIndex >= 3) { // om sista fråga gå till timer mode och resetta
+                    timer_on = 1; 
+                    sessionIndex = 0;
+                    index = 0;
+                } else {
+                    index = selectedQuestions[sessionIndex]; // gå till nästa fråga i frågemode
+                    timer_on = 2; 
+                }
+
+                question_time = 0;
+                delay(200);
+                return;
+            }
+
+
+                
                 question_time++;
                 return;
         }
-            }
+            
 
     sessionIndex++;
 
@@ -582,9 +601,9 @@ void pick3Questions() {
 
 
 
-
-
-
+void userRate() {
+    
+}
 
 void open(){
 
