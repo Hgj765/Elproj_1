@@ -26,10 +26,10 @@
 // TODO
 // 1. X skriv fler frågor + skriva vikter till alla (skriv till progmem)
 // 2. X skriva algoritm som slumpar fram 3 styck från vikter
-// 3. kolla så man kan få plats med alla frågor
+// 3. X kolla så man kan få plats med alla frågor
 // 4. correct ska bara visas om det är rätt svar
 // 5. den ska fråga hur svår frågan var
-// 6. den ska 
+// 6. den ska typ spara hur svårt användaren tycker den var??
 // 
 // 
 
@@ -63,6 +63,7 @@ int index=0;
 // MOTOR
 const int motor_pin3 = 3;  
 const int motor_pin4 = 4;
+bool AnsCorrect = false;
 
 #define NUM_QUESTIONS 20
 int selectedQuestions[3];
@@ -169,6 +170,8 @@ const char q190[] PROGMEM = "19this is a 32 ";
 const char q191[] PROGMEM = "symbol5question?";
 const char qab19[] PROGMEM = "A19ans B5.ans   ";
 const char qcd19[] PROGMEM = "C19ans D5.ans   ";
+
+
 //                             fråga: 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19
 const uint8_t correctAns[] PROGMEM = {0, 2, 1, 2, 3, 0, 3, 2, 3, 1, 0, 2, 1, 2, 0, 2, 1, 0, 2, 3}; // rätt svar är 0.A, 1.C, 2.B
 //                         fråga: 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19
@@ -421,13 +424,36 @@ void show_qna() {
 
 // jag vill göra så att olika saker händer vid rätt och fel svar
 
-void choose_ans() { // kommer eventuellt kontrollera om trycket är rätt svar
-    if (digitalRead(alt_1) == HIGH){
-        question_time = 0; // för hur länge "correct!" ska visas sen
-        timer_on = 3; // gå till feedback mode
+
+void choose_ans() {
+    uint8_t correct = pgm_read_byte(&correctAns[index]);
+
+    if (digitalRead(alt_1) == HIGH) {
+        AnsCorrect = (correct == 0);
+        timer_on = 3;
+        
     }
+    else if (digitalRead(alt_2) == HIGH) {
+        AnsCorrect = (correct == 1);
+        timer_on = 3;
+        
+    }
+    else if (digitalRead(alt_3) == HIGH) {
+        AnsCorrect = (correct == 2);
+        timer_on = 3;
     
+    }
+    else if (digitalRead(alt_4) == HIGH) {
+        AnsCorrect = (correct == 3);
+        timer_on = 3;
+    }
+
+    if (timer_on == 3) {
+        question_time = 0;
+    }
 }
+
+
 
 void feedback_mode() {
     // om rätt - säger correct, om fel - inget händer for now
@@ -435,11 +461,19 @@ void feedback_mode() {
     // correct visas i 2 sek
     if (question_time <= 20) {
         lcd.setCursor(0, 0);
-        lcd.print("correct!           ");
+
+        if (AnsCorrect) {
+            lcd.print("correct!           ");
+        } else {
+            lcd.print("WRONG >:(          ");
+        }
+        
         lcd.setCursor(0, 1);
         lcd.print("                   ");
         question_time++;
+        return;
     }
+
 
     else {
         sessionIndex++;
