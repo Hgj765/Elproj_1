@@ -10,6 +10,8 @@
 // Kan välja 3 frågor baserat på vikt.
 // Kan förstå när man trycker på rätt och fel svar
 // Kan lägga till 5 min vid fel svar
+// Kan fråga användaren om feedback
+// Kan ändra sparad svårighetsgrad efter använderns input
 
 // ska vara pullup istället för pulldown (active low??)
 // undvik flickering på något sätt
@@ -30,9 +32,12 @@
 // 2. X skriva algoritm som slumpar fram 3 styck från vikter
 // 3. X kolla så man kan få plats med alla frågor
 // 4. X correct ska bara visas om det är rätt svar
-// 5. den ska fråga hur svår frågan var
-// 6. den ska typ spara hur svårt användaren tycker den var??
-// 
+// 5. X den ska fråga hur svår frågan var
+// 6. när användaren trycker på en knapp ska den uppdatera vikten med värdet av den knappen
+// 7. motor funktion
+// 8. LEDs
+
+// den ska printa det man svarat
 // 
 
 
@@ -43,6 +48,7 @@
 
 #include <Wire.h>
 #include <LiquidCrystal_I2C.h>
+#include <EEPROM.h>
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
@@ -73,103 +79,105 @@ int selectedQuestions[3];
 bool usedInSession[NUM_QUESTIONS];
 int sessionIndex = 0;
 
+#define EEPROM_START 0
+
 ///////////// FRÅGELÄGE ///////////////////////////////
-const char q000[] PROGMEM = "0. this is a 32 ";
+const char q000[] PROGMEM = "0. this is a    ";
 const char q001[] PROGMEM = "symbol0question?";
 const char qab00[] PROGMEM = "A0.ans B0.ans   ";
 const char qcd00[] PROGMEM = "C0.ans D0.ans   ";
 
-const char q010[] PROGMEM = "1. this is a 32 ";
+const char q010[] PROGMEM = "1. this is a    ";
 const char q011[] PROGMEM = "symbol1question?";
 const char qab01[] PROGMEM = "A1.ans B1.ans   ";
 const char qcd01[] PROGMEM = "C1.ans D1.ans   ";
 
-const char q020[] PROGMEM = "2. this is a 32 ";
+const char q020[] PROGMEM = "2. this is a    ";
 const char q021[] PROGMEM = "symbol2question?";
 const char qab02[] PROGMEM = "A2.ans B2.ans   ";
 const char qcd02[] PROGMEM = "C2.ans D2.ans   ";
 
-const char q030[] PROGMEM = "3. this is a 32 ";
+const char q030[] PROGMEM = "3. this is a    ";
 const char q031[] PROGMEM = "symbol3question?";
 const char qab03[] PROGMEM = "A3.ans B3.ans   ";
 const char qcd03[] PROGMEM = "C3.ans D3.ans   ";
 
-const char q040[] PROGMEM = "4. this is a 32 ";
+const char q040[] PROGMEM = "4. this is a    ";
 const char q041[] PROGMEM = "symbol4question?";
 const char qab04[] PROGMEM = "A4.ans B4.ans   ";
 const char qcd04[] PROGMEM = "C4.ans D4.ans   ";
 
-const char q050[] PROGMEM = "5. this is a 32 ";
+const char q050[] PROGMEM = "5. this is a    ";
 const char q051[] PROGMEM = "symbol5question?";
 const char qab05[] PROGMEM = "A5.ans B5.ans   ";
 const char qcd05[] PROGMEM = "C5.ans D5.ans   ";
 
-const char q060[] PROGMEM = "6. this is a 32 ";
+const char q060[] PROGMEM = "6. this is a    ";
 const char q061[] PROGMEM = "symbol6question?";
 const char qab06[] PROGMEM = "A6.ans B6.ans   ";
 const char qcd06[] PROGMEM = "C6.ans D6.ans   ";
 
-const char q070[] PROGMEM = "7. this is a 32 ";
+const char q070[] PROGMEM = "7. this is a    ";
 const char q071[] PROGMEM = "symbol7question?";
 const char qab07[] PROGMEM = "A7.ans B7.ans   ";
 const char qcd07[] PROGMEM = "C7.ans D7.ans   ";
 
-const char q080[] PROGMEM = "8. this is a 32 ";
+const char q080[] PROGMEM = "8. this is a    ";
 const char q081[] PROGMEM = "symbol8question?";
 const char qab08[] PROGMEM = "A8.ans B8.ans   ";
 const char qcd08[] PROGMEM = "C8.ans D8.ans   ";
 
-const char q090[] PROGMEM = "9. this is a 32 ";
+const char q090[] PROGMEM = "9. this is a    ";
 const char q091[] PROGMEM = "symbol9question?";
 const char qab09[] PROGMEM = "A9.ans B9.ans   ";
 const char qcd09[] PROGMEM = "C9.ans D9.ans   ";
 
-const char q100[] PROGMEM = "10.this is a 32 ";
+const char q100[] PROGMEM = "10.this is a    ";
 const char q101[] PROGMEM = "symbol10question";
 const char qab10[] PROGMEM = "A10ans B10ans   ";
 const char qcd10[] PROGMEM = "C10ans D10ans   ";
 
-const char q110[] PROGMEM = "11. this is a 32 ";
+const char q110[] PROGMEM = "11. this is a    ";
 const char q111[] PROGMEM = "symbo11question?";
 const char qab11[] PROGMEM = "A11ans B11ans   ";
 const char qcd11[] PROGMEM = "C4.ans D4.ans   ";
 
-const char q120[] PROGMEM = "12 this is a 32 ";
+const char q120[] PROGMEM = "12 this is a    ";
 const char q121[] PROGMEM = "symbol5question?";
 const char qab12[] PROGMEM = "A12ans B5.ans   ";
 const char qcd12[] PROGMEM = "C12ans D5.ans   ";
 
-const char q130[] PROGMEM = "13this is a 32 ";
+const char q130[] PROGMEM = "13this is a    ";
 const char q131[] PROGMEM = "symbol6question?";
 const char qab13[] PROGMEM = "A13ans B6.ans   ";
 const char qcd13[] PROGMEM = "C13ans D6.ans   ";
 
-const char q140[] PROGMEM = "14this is a 32 ";
+const char q140[] PROGMEM = "14this is a    ";
 const char q141[] PROGMEM = "symbol0question?";
 const char qab14[] PROGMEM = "A14ans B0.ans   ";
 const char qcd14[] PROGMEM = "C14ans D0.ans   ";
 
-const char q150[] PROGMEM = "15this is a 32 ";
+const char q150[] PROGMEM = "15this is a    ";
 const char q151[] PROGMEM = "symbol1question?";
 const char qab15[] PROGMEM = "A15ans B1.ans   ";
 const char qcd15[] PROGMEM = "C15ans D1.ans   ";
 
-const char q160[] PROGMEM = "16this is a 32 ";
+const char q160[] PROGMEM = "16this is a    ";
 const char q161[] PROGMEM = "symbol2question?";
 const char qab16[] PROGMEM = "A16ans B2.ans   ";
 const char qcd16[] PROGMEM = "C16ans D2.ans   ";
 
-const char q170[] PROGMEM = "17this is a 32 ";
+const char q170[] PROGMEM = "17this is a    ";
 const char q171[] PROGMEM = "symbol3question?";
 const char qab17[] PROGMEM = "A17ans B3.ans   ";
 const char qcd17[] PROGMEM = "C17ans D3.ans   ";
 
-const char q180[] PROGMEM = "18this is a 32 ";
+const char q180[] PROGMEM = "18this is a    ";
 const char q181[] PROGMEM = "symbol4question?";
 const char qab18[] PROGMEM = "A18ans B4.ans   ";
 const char qcd18[] PROGMEM = "C18ans D4.ans   ";
 
-const char q190[] PROGMEM = "19this is a 32 ";
+const char q190[] PROGMEM = "19this is a    ";
 const char q191[] PROGMEM = "symbol5question?";
 const char qab19[] PROGMEM = "A19ans B5.ans   ";
 const char qcd19[] PROGMEM = "C19ans D5.ans   ";
@@ -177,8 +185,10 @@ const char qcd19[] PROGMEM = "C19ans D5.ans   ";
 
 //                             fråga: 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19
 const uint8_t correctAns[] PROGMEM = {0, 2, 1, 2, 3, 0, 3, 2, 3, 1, 0, 2, 1, 2, 0, 2, 1, 0, 2, 3}; // rätt svar är 0.A, 1.C, 2.B
-//                         fråga: 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19
-const uint8_t weight[] PROGMEM = {1, 2, 3, 4, 1, 2, 3, 2, 1, 4, 2, 4, 1, 4, 2, 3, 4, 2, 1, 4};
+////                         fråga: 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19
+//const uint8_t weight[] PROGMEM = {1, 2, 3, 4, 1, 2, 3, 2, 1, 4, 2, 4, 1, 4, 2, 3, 4, 2, 1, 4};
+
+uint8_t weight[NUM_QUESTIONS];
 
 // pointers
 const char* const question_r0[] PROGMEM = {q000, q010, q020, q030, q040, q050, q060, q070, q080, q090, q100, q110, q120, q130, q140, q150, q160, q170, q180, q190};
@@ -190,7 +200,18 @@ const char* const optionCD[] PROGMEM = {qcd00, qcd01, qcd02, qcd03, qcd04, qcd05
 char buf[17];
 ////////////////////////////////////////////////////////////
 
+void loadWeights() {
+    for (int i = 0; i < NUM_QUESTIONS; i++) {
+        uint8_t val = EEPROM.read(EEPROM_START + i);
 
+        if (val < 1 || val > 4) {
+            weight[i] = 4; // default till svår/otestad
+            EEPROM.update(EEPROM_START + i, 4);
+        } else {
+            weight[i] = val;
+        }
+    }
+}
 
 
 
@@ -211,6 +232,7 @@ void setup() {
     pinMode(led2, OUTPUT);
 
     randomSeed(analogRead(A0));
+    loadWeights();
 
     // MOTOR
     pinMode(motor_pin3, OUTPUT);
@@ -403,6 +425,9 @@ void printProgmem(const char* const* table, int index, int row) {
 void printQue() {
     printProgmem(question_r0, index, 0);
     printProgmem(question_r1, index, 1);
+    /*lcd.setCursor(13, 0); 
+    lcd.print("W");
+    lcd.print(weight[index]);*/
 }
 
 void printAns() {
@@ -487,16 +512,32 @@ void feedback_mode() {
         return;
     }
 
-     if (AnsCorrect && question_time > 10) {
+     if (question_time > 10) {
+        if (AnsCorrect) {
                 lcd.setCursor(0, 0);
                 lcd.print("How hard was    ");
                 lcd.setCursor(0, 1);
                 lcd.print("this question?  ");
 
-            if (digitalRead(alt_1) == HIGH || digitalRead(alt_2) == HIGH || digitalRead(alt_3) == HIGH || digitalRead(alt_4) == HIGH) {
-                sessionIndex++;
+            if (digitalRead(alt_1) == HIGH || digitalRead(alt_2) == HIGH || digitalRead(alt_3) == HIGH) {
+                updateWeightFromUser();   
+            } else {
+                question_time++;
+                return;
+            }
 
-                if (sessionIndex >= 3) { // om sista fråga gå till timer mode och resetta
+
+            } else {
+            
+                weight[index] = 4;
+                EEPROM.update(EEPROM_START + index, 4);
+            }
+
+
+
+
+            sessionIndex++; 
+            if (sessionIndex >= 3) { // om sista fråga gå till timer mode och resetta
                     timer_on = 1; 
                     sessionIndex = 0;
                     index = 0;
@@ -508,9 +549,6 @@ void feedback_mode() {
                 question_time = 0;
                 delay(200);
                 return;
-            }
-
-
                 
                 question_time++;
                 return;
@@ -561,7 +599,9 @@ int pickWeightedQuestion() {
     for (int i = 0; i < NUM_QUESTIONS; i++) {
         // ser till så att den inte redan är med i omgången. summerar ihop alla vikter
         if (!usedInSession[i]) {
-            total += pgm_read_byte(&weight[i]);
+            //total += pgm_read_byte(&weight[i]);
+            total += weight[i];
+        
         }
     }
 
@@ -573,7 +613,8 @@ int pickWeightedQuestion() {
         // subtrahera vikt från random tal. frågan som random tal blir negativ är frågan som ska visas
         if (usedInSession[i]) continue;
 
-                uint8_t w = pgm_read_byte(&weight[i]); 
+                //uint8_t w = pgm_read_byte(&weight[i]); 
+                uint8_t w = weight[i];
 
 
         if (r < w) {
@@ -599,10 +640,19 @@ void pick3Questions() {
     question_time = 0;
 }
 
+// CHANGED
+void updateWeightFromUser() {
+    uint8_t newWeight = 0;
 
+    if (digitalRead(alt_1) == HIGH) newWeight = 1;
+    else if (digitalRead(alt_2) == HIGH) newWeight = 2;
+    else if (digitalRead(alt_3) == HIGH) newWeight = 3;
+    else return;
 
-void userRate() {
-    
+    if (weight[index] != newWeight) {
+        weight[index] = newWeight;
+        EEPROM.update(EEPROM_START + index, newWeight);
+    }
 }
 
 void open(){
