@@ -33,12 +33,12 @@
 // 3. X kolla så man kan få plats med alla frågor
 // 4. X correct ska bara visas om det är rätt svar
 // 5. X den ska fråga hur svår frågan var
-// 6. när användaren trycker på en knapp ska den uppdatera vikten med värdet av den knappen
-// 7. motor funktion
+// 6. X när användaren trycker på en knapp ska den uppdatera vikten med värdet av den knappen
+// 6. printa vad användaren tryckte på och byt till pull down
+// 7. X motor funktion
 // 8. LEDs
 
-// den ska printa det man svarat
-// 
+ 
 
 
 
@@ -219,9 +219,7 @@ void setup() {
 
     lcd.init();        
     lcd.backlight();
-    //close();
-    //open();
-
+    
     
     pinMode(alt_1, INPUT);
     pinMode(alt_2, INPUT);
@@ -237,6 +235,10 @@ void setup() {
     // MOTOR
     pinMode(motor_pin3, OUTPUT);
     pinMode(motor_pin4, OUTPUT);
+
+    close();
+    open();
+
   
 }
 
@@ -363,6 +365,7 @@ void set_timer() {
 
     if (digitalRead(question_pin) == HIGH && timer_on != 0) // gå till frågemode
     {
+        close();
         timer_on=2;
         //pick3Questions();
         delay(100);
@@ -374,6 +377,7 @@ void set_timer() {
 void timer_done(unsigned long elapsed, int timer) {
 // visar att tiden är ute. stannar på den sidan i några sekunder innan den går tillbaka till setup mode
     if (elapsed > timer) {
+        open();
         lcd.setCursor(0, 0);
         lcd.print("KLAR! :D           ");
         lcd.setCursor(0, 1);
@@ -385,6 +389,8 @@ void timer_done(unsigned long elapsed, int timer) {
         delay(500);
         digitalWrite(led, LOW);
         delay(500);
+
+
     }
     
 
@@ -392,6 +398,7 @@ void timer_done(unsigned long elapsed, int timer) {
     timer_on = 0;
     index = 0;
     question_time = 0;
+
     
     }
 
@@ -449,9 +456,6 @@ void show_qna() {
     }
     else{question_time = 0;}
 }
-
-// jag vill göra så att olika saker händer vid rätt och fel svar
-
 
 void choose_ans() {
     uint8_t correct = pgm_read_byte(&correctAns[index]);
