@@ -34,10 +34,14 @@
 // 4. X correct ska bara visas om det är rätt svar
 // 5. X den ska fråga hur svår frågan var
 // 6. X när användaren trycker på en knapp ska den uppdatera vikten med värdet av den knappen
-// 6. printa vad användaren tryckte på och byt till pull down
 // 7. X motor funktion
-// 8. LEDs
+// 8. XLEDs
+// 9. printa vad användaren tryckte på
+// 10. byt till pull down
+// 11. skriv riktiga frågor
 
+
+// tanken är att när man byter mode ska det stå 
  
 
 
@@ -62,14 +66,18 @@ int alt_2=9;
 int alt_3=8;
 int alt_4=7;
 int led=2;
-int led2=12;
+int led1=3;
+int led2=6;
+int led3=12;
 
 int question_time = 0; 
 int timer_on =0;
 int index=0;
+int chosenDifficulty = 0;
+bool difficultyChosen = false;
 
 // MOTOR
-const int motor_pin3 = 3;  
+const int motor_pin3 = 5;  
 const int motor_pin4 = 4;
 bool AnsCorrect = false;
 int correctSoFar = 0;
@@ -227,7 +235,9 @@ void setup() {
     pinMode(alt_4, INPUT);
     pinMode(question_pin, INPUT);
     pinMode(led, OUTPUT);
+    pinMode(led1, OUTPUT);
     pinMode(led2, OUTPUT);
+    pinMode(led3, OUTPUT);
 
     randomSeed(analogRead(A0));
     loadWeights();
@@ -247,6 +257,7 @@ void setup() {
 // TIMERMODE
 
 void loop() {
+    
     switch (timer_on)
     {
         case 0:
@@ -267,11 +278,50 @@ void loop() {
     
     }
 
+    updateLEDs();
+
     delay(100);
 
 }
 
+    void updateLEDs() {
+    switch (timer_on) {
+        case 0: // setup
+            digitalWrite(led1, HIGH);
+            digitalWrite(led2, LOW);
+            digitalWrite(led3, LOW);
+            break;
+
+        case 1: // timer
+            digitalWrite(led1, LOW);
+            digitalWrite(led2, LOW);
+            digitalWrite(led3, LOW);
+            break;
+
+        case 2: // question
+            digitalWrite(led1, LOW);
+            digitalWrite(led2, HIGH);
+            digitalWrite(led3, LOW);
+            break;
+
+        case 3: // feedback
+            if (question_time <= 10) {
+            // Correct / Incorrect screen → ALL OFF
+            digitalWrite(led1, LOW);
+            digitalWrite(led2, LOW);
+            digitalWrite(led3, LOW);
+        } else {
+            // "How hard was it?" → LED3 ON
+            digitalWrite(led1, LOW);
+            digitalWrite(led2, LOW);
+            digitalWrite(led3, HIGH);
+        }
+    }
+}
+
+
 void timer_mode() {
+    
     unsigned long currentTime = millis();
     unsigned long elapsed = (currentTime - startTime) / 1000;
     unsigned long time_left = (elapsed >= timer) ? 0 : timer - elapsed; 
@@ -377,22 +427,29 @@ void set_timer() {
 void timer_done(unsigned long elapsed, int timer) {
 // visar att tiden är ute. stannar på den sidan i några sekunder innan den går tillbaka till setup mode
     if (elapsed > timer) {
-        open();
+        
         lcd.setCursor(0, 0);
         lcd.print("KLAR! :D           ");
         lcd.setCursor(0, 1);
         lcd.print("                   ");
         
 
-    for (int i = 0; i < 2; i++) {
-        digitalWrite(led, HIGH);
+    for (int i = 0; i < 5; i++) {
+        digitalWrite(led1, HIGH);
+        digitalWrite(led2, HIGH);
+        digitalWrite(led3, HIGH);
+
         delay(500);
-        digitalWrite(led, LOW);
+        digitalWrite(led1, LOW);
+        digitalWrite(led2, LOW);
+        digitalWrite(led3, LOW);
         delay(500);
+
+       
 
 
     }
-    
+     open();
 
     // nästa fråga
     timer_on = 0;
@@ -495,9 +552,6 @@ void choose_ans() {
 
 
 void feedback_mode() {
-    // om rätt - säger correct, om fel - inget händer for now
-    
-    // correct visas i 2 sek
     if (question_time <= 10) {
         lcd.setCursor(0, 0);
 
@@ -516,77 +570,74 @@ void feedback_mode() {
         return;
     }
 
-     if (question_time > 10) {
-        if (AnsCorrect) {
-                lcd.setCursor(0, 0);
-                lcd.print("How hard was    ");
-                lcd.setCursor(0, 1);
-                lcd.print("this question?  ");
-
-            if (digitalRead(alt_1) == HIGH || digitalRead(alt_2) == HIGH || digitalRead(alt_3) == HIGH) {
-                updateWeightFromUser();   
-            } else {
-                question_time++;
-                return;
-            }
-
-
-            } else {
-            
-                weight[index] = 4;
-                EEPROM.update(EEPROM_START + index, 4);
-            }
-
-
-
-
-            sessionIndex++; 
-            if (sessionIndex >= 3) { // om sista fråga gå till timer mode och resetta
-                    timer_on = 1; 
-                    sessionIndex = 0;
-                    index = 0;
-                } else {
-                    index = selectedQuestions[sessionIndex]; // gå till nästa fråga i frågemode
-                    timer_on = 2; 
-                }
-
-                question_time = 0;
-                delay(200);
-                return;
-                
-                question_time++;
-                return;
+    if (question_time > 10 && !difficultyChosen && AnsCorrect) {
+        lcd.setCursor(0, 0);
+        lcd.print("How hard was    ");
+        lcd.setCursor(0, 1);
+        lcd.print("this question?  ");
+   
+        if (digitalRead(alt_1) == HIGH) {
+            chosenDifficulty = 1;
+            difficultyChosen = true;
         }
-            
-
-    sessionIndex++;
-
-        
-        
-        if (sessionIndex >= 3) {
-            if (correctSoFar >= 3) {
-            // session done
-            timer_done(timer + 1, timer);
-            timer_on = 0; // back to timer
+        else if (digitalRead(alt_2) == HIGH) {
+            chosenDifficulty = 2;
+            difficultyChosen = true;
+        }
+        else if (digitalRead(alt_3) == HIGH) {
+            chosenDifficulty = 3;
+            difficultyChosen = true;
+        } else {
             return;
-            }
-
-        timer_on = 1;
-        timer += 300; 
-        sessionIndex = 0;
-        question_time = 0;
-        index = 0;
-        return;
-
         }
 
-    index = selectedQuestions[sessionIndex];
-        question_time = 0;
-        timer_on = 2;
+        } else {
+            weight[index] = 4;
+            EEPROM.update(EEPROM_START + index, 4);
+        }
+    
+    if (difficultyChosen) {
+        lcd.setCursor(0, 0);
+
+        if (chosenDifficulty == 1) lcd.print("Easy            ");
+        else if (chosenDifficulty == 2) lcd.print("Medium          ");
+        else if (chosenDifficulty == 3) lcd.print("Hard            ");
+
+        lcd.setCursor(0,1);
+        lcd.print("                  ");
+
+        if (question_time < 20) {
+            question_time++;
+            return; 
+        }
+        difficultyChosen = false;
     }
 
+    sessionIndex++; 
 
-        
+if (sessionIndex >= 3) {
+    if (correctSoFar >= 3) {
+        timer_done(timer + 1, timer);
+        timer_on = 0;
+    } else {
+        timer += 300;  
+        timer_on = 1;
+    }
+    sessionIndex = 0;
+    index = 0;
+    correctSoFar = 0;
+    question_time = 0;
+
+    return;
+}
+
+    index = selectedQuestions[sessionIndex];
+    timer_on = 2;
+    question_time = 0;
+
+}
+      
+
         
     
 
@@ -663,14 +714,14 @@ void open(){
 
         digitalWrite(motor_pin3, HIGH);
         digitalWrite(motor_pin4, LOW);
-        delay(6000);
+        delay(2000);
         digitalWrite(motor_pin3, LOW);
 }
 void close(){
 
         digitalWrite(motor_pin4, HIGH);
         digitalWrite(motor_pin3, LOW);
-        delay(6000);
+        delay(2000);
         digitalWrite(motor_pin4, LOW);
 }
 
