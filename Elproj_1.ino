@@ -61,6 +61,10 @@ int timer = 1500; // default tid i setup mode
 #define BLINKS 5 // hur ofta lampan ska blinka vid färdig timer (sekunder typ)
 // hur länge frågor och svar visas
 
+#define AA byte(0)  // å
+#define AE byte(1)  // ä
+#define OE byte(2)  // ö
+
 unsigned long startTime; // store start time;
 
 
@@ -94,8 +98,8 @@ int sessionIndex = 0;
 #define EEPROM_START 0
 
 ///////////// FRÅGELÄGE ///////////////////////////////
-const char q000[] PROGMEM = "0. this is a    ";
-const char q001[] PROGMEM = "symbol0question?";
+const char q000[] PROGMEM = "0. detta {a}r fr{A}ga";
+const char q001[] PROGMEM = "symbol0question? ";
 const char qab00[] PROGMEM = "A0.ans B0.ans   ";
 const char qcd00[] PROGMEM = "C0.ans D0.ans   ";
 
@@ -227,13 +231,65 @@ void loadWeights() {
     }
 }
 
+void printChar(const char* s) {
+    while (*s) {
+        if (*s == '{') {
+            s++;
+            if (*s == 'a') lcd.write(AE);
+            else if (*s == 'o') lcd.write(OE);
+            else if (*s == 'A') lcd.write(AA);
+            s++; // skip letter
+            if (*s == '}') s++;
+        } else {
+            lcd.print(*s);
+            s++;
+        }
+    }
+}
+
+byte ae[8] = {
+    B00000,
+    B01010,
+    B00000,
+    B01110,
+    B00001,
+    B01111,
+    B10001,
+    B01111
+};
+
+byte oe[8] = {
+    B00000,
+    B01010,
+    B00000,
+    B01110,
+    B10001,
+    B10001,
+    B10001,
+    B01110
+};
+
+byte aa[8] = {
+    B00000,
+    B00100,
+    B00000,
+    B01110,
+    B00001,
+    B11111,
+    B10001,
+    B01111
+
+};
+
+
 
 void setup() {
 
     lcd.init();        
     lcd.backlight();
-    //lcd.createChar(0, ae);
-    //lcd.createChar(1)
+    lcd.createChar(0, aa);
+    lcd.createChar(1, ae);
+    lcd.createChar(2, oe);
     
     
     pinMode(alt_1, INPUT_PULLUP);
@@ -569,9 +625,9 @@ void feedback_mode() {
 
     if (question_time > 10 && !difficultyChosen && AnsCorrect) {
         lcd.setCursor(0, 0);
-        lcd.print("How hard was    ");
+        printChar("Hur sv{A}r var    ");
         lcd.setCursor(0, 1);
-        lcd.print("this question?  ");
+        printChar("fr{A}gan {A}{a}{o}    ");
    
         if (digitalRead(alt_1) == LOW) { //pullup
             chosenDifficulty = 1;
