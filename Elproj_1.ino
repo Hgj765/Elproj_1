@@ -35,10 +35,11 @@
 // 5. X den ska fråga hur svår frågan var
 // 6. X när användaren trycker på en knapp ska den uppdatera vikten med värdet av den knappen
 // 7. X motor funktion
-// 8. XLEDs
-// 9. printa vad användaren tryckte på
+// 8. X LEDs
+// 9. X printa vad användaren tryckte på
 // 10. byt till pull down
 // 11. skriv riktiga frågor
+// 12. säkerställ att det är möjligt att lägga till en ny sida av frågor om det behövs
 
 
 // tanken är att när man byter mode ska det stå 
@@ -56,7 +57,12 @@
 
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
-int timer = 0; // om man börjar på 0 får man inte konstiga negativa tider
+int timer = 1500; // default tid i setup mode
+#define TIMER_INTERVALL 300; // hur mycket man ökar och minskar timern med
+#define OPEN_TIME 2000; // hur länge motorn öppnar 
+#define CLOSE_TIME 2000; // hur länge motorn stänger
+#define BLINKS 5; // hur ofta lampan ska blinka vid färdig timer (sekunder typ)
+
 unsigned long startTime; // store start time;
 
 
@@ -208,6 +214,8 @@ const char* const optionCD[] PROGMEM = {qcd00, qcd01, qcd02, qcd03, qcd04, qcd05
 char buf[17];
 ////////////////////////////////////////////////////////////
 
+
+
 void loadWeights() {
     for (int i = 0; i < NUM_QUESTIONS; i++) {
         uint8_t val = EEPROM.read(EEPROM_START + i);
@@ -220,7 +228,6 @@ void loadWeights() {
         }
     }
 }
-
 
 
 void setup() {
@@ -252,10 +259,6 @@ void setup() {
   
 }
 
-
-
-// TIMERMODE
-
 void loop() {
     
     switch (timer_on)
@@ -284,39 +287,39 @@ void loop() {
 
 }
 
-    void updateLEDs() {
-    switch (timer_on) {
-        case 0: // setup
-            digitalWrite(led1, HIGH);
-            digitalWrite(led2, LOW);
-            digitalWrite(led3, LOW);
-            break;
+void updateLEDs() {
+switch (timer_on) {
+    case 0: // setup
+        digitalWrite(led1, HIGH);
+        digitalWrite(led2, LOW);
+        digitalWrite(led3, LOW);
+        break;
 
-        case 1: // timer
-            digitalWrite(led1, LOW);
-            digitalWrite(led2, LOW);
-            digitalWrite(led3, LOW);
-            break;
+    case 1: // timer
+        digitalWrite(led1, LOW);
+        digitalWrite(led2, LOW);
+        digitalWrite(led3, LOW);
+        break;
 
-        case 2: // question
-            digitalWrite(led1, LOW);
-            digitalWrite(led2, HIGH);
-            digitalWrite(led3, LOW);
-            break;
+    case 2: // question
+        digitalWrite(led1, LOW);
+        digitalWrite(led2, HIGH);
+        digitalWrite(led3, LOW);
+        break;
 
-        case 3: // feedback
-            if (question_time <= 10) {
-            // Correct / Incorrect screen → ALL OFF
-            digitalWrite(led1, LOW);
-            digitalWrite(led2, LOW);
-            digitalWrite(led3, LOW);
-        } else {
-            // "How hard was it?" → LED3 ON
-            digitalWrite(led1, LOW);
-            digitalWrite(led2, LOW);
-            digitalWrite(led3, HIGH);
-        }
+    case 3: // feedback
+        if (question_time <= 10) {
+        // Correct / Incorrect screen → ALL OFF
+        digitalWrite(led1, LOW);
+        digitalWrite(led2, LOW);
+        digitalWrite(led3, LOW);
+    } else {
+        // "How hard was it?" → LED3 ON
+        digitalWrite(led1, LOW);
+        digitalWrite(led2, LOW);
+        digitalWrite(led3, HIGH);
     }
+}
 }
 
 
@@ -393,14 +396,14 @@ void set_timer() {
 
     if (digitalRead(alt_2) == HIGH) // ta bort 10 sek
     {
-        if (timer > 0) timer -= 10;
+        if (timer > 0) timer -= TIMER_INTERVALL;
         delay(100);
       
         }
 
     if (digitalRead(alt_3) == HIGH) // lägg till 10 sek
     {
-        timer += 10;
+        timer += TIMER_INTERVALL;
         delay(100);
 
     }
@@ -429,12 +432,12 @@ void timer_done(unsigned long elapsed, int timer) {
     if (elapsed > timer) {
         
         lcd.setCursor(0, 0);
-        lcd.print("KLAR! :D           ");
+        lcd.print("DONE               ");
         lcd.setCursor(0, 1);
         lcd.print("                   ");
         
 
-    for (int i = 0; i < 5; i++) {
+    for (int i = 0; i < BLINKS; i++) {
         digitalWrite(led1, HIGH);
         digitalWrite(led2, HIGH);
         digitalWrite(led3, HIGH);
@@ -445,9 +448,6 @@ void timer_done(unsigned long elapsed, int timer) {
         digitalWrite(led3, LOW);
         delay(500);
 
-       
-
-
     }
      open();
 
@@ -455,10 +455,7 @@ void timer_done(unsigned long elapsed, int timer) {
     timer_on = 0;
     index = 0;
     question_time = 0;
-
-    
     }
-
 }
 
 
@@ -615,32 +612,28 @@ void feedback_mode() {
 
     sessionIndex++; 
 
-if (sessionIndex >= 3) {
-    if (correctSoFar >= 3) {
-        timer_done(timer + 1, timer);
-        timer_on = 0;
-    } else {
-        timer += 300;  
-        timer_on = 1;
+    if (sessionIndex >= 3) {
+        if (correctSoFar >= 3) {
+            timer_done(timer + 1, timer);
+            timer_on = 0;
+        } else {
+            timer += 300;  
+            timer_on = 1;
+        }
+        sessionIndex = 0;
+        index = 0;
+        correctSoFar = 0;
+        question_time = 0;
+
+        return;
     }
-    sessionIndex = 0;
-    index = 0;
-    correctSoFar = 0;
-    question_time = 0;
 
-    return;
-}
-
-    index = selectedQuestions[sessionIndex];
-    timer_on = 2;
-    question_time = 0;
+        index = selectedQuestions[sessionIndex];
+        timer_on = 2;
+        question_time = 0;
 
 }
-      
-
-        
-    
-
+         
 void resetSession() {
     // kollar om den är med i sessionen
     for (int i = 0; i < NUM_QUESTIONS; i++) {
@@ -695,7 +688,6 @@ void pick3Questions() {
     question_time = 0;
 }
 
-// CHANGED
 void updateWeightFromUser() {
     uint8_t newWeight = 0;
 
@@ -714,14 +706,14 @@ void open(){
 
         digitalWrite(motor_pin3, HIGH);
         digitalWrite(motor_pin4, LOW);
-        delay(2000);
+        delay(OPEN_TIME));
         digitalWrite(motor_pin3, LOW);
 }
 void close(){
 
         digitalWrite(motor_pin4, HIGH);
         digitalWrite(motor_pin3, LOW);
-        delay(2000);
+        delay(CLOSE_TIME);
         digitalWrite(motor_pin4, LOW);
 }
 
