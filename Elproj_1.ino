@@ -18,9 +18,6 @@
 // man kan inte skriva å, ä, ö och förmodligen inga fancy matte tecken. lös eller tänk på att använda en annan sorts skärm 
 // den ska kunna veta när något behöver flera rader? eller man ska kunna ha frågor med fler än 16x2 tecken
 // den resettar inte question_time efter tiden är ute. den resettar inte inställda tiden heller. sluta
-// får den plats med 20 frågor?
-// default tid på 25 min. max tid 10 timmar
-// den ska autoöppna i början??  motor grejer jag behöver hjälp
 
 // den ska kunna spara användarens input om rätt och fel ?? EEPROM SKITEN?
 
@@ -58,10 +55,11 @@
 LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 int timer = 1500; // default tid i setup mode
-#define TIMER_INTERVALL 300; // hur mycket man ökar och minskar timern med
-#define OPEN_TIME 2000; // hur länge motorn öppnar 
-#define CLOSE_TIME 2000; // hur länge motorn stänger
-#define BLINKS 5; // hur ofta lampan ska blinka vid färdig timer (sekunder typ)
+#define TIMER_INTERVALL 300 // hur mycket man ökar och minskar timern med
+#define OPEN_TIME 2000 // hur länge motorn öppnar 
+#define CLOSE_TIME 2000 // hur länge motorn stänger
+#define BLINKS 5 // hur ofta lampan ska blinka vid färdig timer (sekunder typ)
+// hur länge frågor och svar visas
 
 unsigned long startTime; // store start time;
 
@@ -234,13 +232,15 @@ void setup() {
 
     lcd.init();        
     lcd.backlight();
+    //lcd.createChar(0, ae);
+    //lcd.createChar(1)
     
     
-    pinMode(alt_1, INPUT);
-    pinMode(alt_2, INPUT);
-    pinMode(alt_3, INPUT);
-    pinMode(alt_4, INPUT);
-    pinMode(question_pin, INPUT);
+    pinMode(alt_1, INPUT_PULLUP);
+    pinMode(alt_2, INPUT_PULLUP);
+    pinMode(alt_3, INPUT_PULLUP);
+    pinMode(alt_4, INPUT_PULLUP);
+    pinMode(question_pin, INPUT_PULLUP);
     pinMode(led, OUTPUT);
     pinMode(led1, OUTPUT);
     pinMode(led2, OUTPUT);
@@ -361,7 +361,7 @@ void timer_mode() {
     lcd.print(seconds);
     lcd.print(" Totalt   ");
 
-    if (digitalRead(question_pin) == HIGH) {
+    if (digitalRead(question_pin) == LOW) { // pullup
         timer_on=2;
         pick3Questions();
         delay(200);
@@ -394,21 +394,21 @@ void set_timer() {
 
     
 
-    if (digitalRead(alt_2) == HIGH) // ta bort 10 sek
+    if (digitalRead(alt_2) == LOW) // ta bort 10 sek // pullup
     {
         if (timer > 0) timer -= TIMER_INTERVALL;
         delay(100);
       
         }
 
-    if (digitalRead(alt_3) == HIGH) // lägg till 10 sek
+    if (digitalRead(alt_3) == LOW) // lägg till 10 sek // pullup
     {
         timer += TIMER_INTERVALL;
         delay(100);
 
     }
 
-    if (digitalRead(alt_1) == HIGH) // confirm tid
+    if (digitalRead(alt_1) == LOW) // confirm tid // pullup
     {
         startTime = millis();
         timer_on=1;
@@ -416,7 +416,7 @@ void set_timer() {
 
     }
 
-    if (digitalRead(question_pin) == HIGH && timer_on != 0) // gå till frågemode
+    if (digitalRead(question_pin) == LOW && timer_on != 0) // gå till frågemode // pullup
     {
         close();
         timer_on=2;
@@ -466,7 +466,7 @@ void question_mode() {
     show_qna();
     choose_ans();
     
-    if (digitalRead(question_pin) == HIGH) {
+    if (digitalRead(question_pin) == LOW) { // pullup
         timer_on = 1;       // go back to timer
         delay(200);
         return;
@@ -514,24 +514,24 @@ void show_qna() {
 void choose_ans() {
     uint8_t correct = pgm_read_byte(&correctAns[index]);
 
-    if (digitalRead(alt_1) == HIGH) {
+    if (digitalRead(alt_1) == LOW) { //pullup
         AnsCorrect = (correct == 0);
         timer_on = 3;
      
         
     }
-    else if (digitalRead(alt_2) == HIGH) {
+    else if (digitalRead(alt_2) == LOW) { // pullup
         AnsCorrect = (correct == 1);
         timer_on = 3;
 
     }
-    else if (digitalRead(alt_3) == HIGH) {
+    else if (digitalRead(alt_3) == LOW) { // pullup
         AnsCorrect = (correct == 2);
         timer_on = 3;
   
     
     }
-    else if (digitalRead(alt_4) == HIGH) {
+    else if (digitalRead(alt_4) == LOW) { // pullup
         AnsCorrect = (correct == 3);
         timer_on = 3;
         
@@ -573,15 +573,15 @@ void feedback_mode() {
         lcd.setCursor(0, 1);
         lcd.print("this question?  ");
    
-        if (digitalRead(alt_1) == HIGH) {
+        if (digitalRead(alt_1) == LOW) { //pullup
             chosenDifficulty = 1;
             difficultyChosen = true;
         }
-        else if (digitalRead(alt_2) == HIGH) {
+        else if (digitalRead(alt_2) == LOW) { //pullup
             chosenDifficulty = 2;
             difficultyChosen = true;
         }
-        else if (digitalRead(alt_3) == HIGH) {
+        else if (digitalRead(alt_3) == LOW) { //pullup
             chosenDifficulty = 3;
             difficultyChosen = true;
         } else {
@@ -691,9 +691,9 @@ void pick3Questions() {
 void updateWeightFromUser() {
     uint8_t newWeight = 0;
 
-    if (digitalRead(alt_1) == HIGH) newWeight = 1;
-    else if (digitalRead(alt_2) == HIGH) newWeight = 2;
-    else if (digitalRead(alt_3) == HIGH) newWeight = 3;
+    if (digitalRead(alt_1) == LOW) newWeight = 1; // pullup
+    else if (digitalRead(alt_2) == LOW) newWeight = 2; // pullup
+    else if (digitalRead(alt_3) == LOW) newWeight = 3; // pullup
     else return;
 
     if (weight[index] != newWeight) {
@@ -706,7 +706,7 @@ void open(){
 
         digitalWrite(motor_pin3, HIGH);
         digitalWrite(motor_pin4, LOW);
-        delay(OPEN_TIME));
+        delay(OPEN_TIME);
         digitalWrite(motor_pin3, LOW);
 }
 void close(){
