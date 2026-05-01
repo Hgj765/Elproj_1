@@ -19,9 +19,6 @@
 // den ska kunna veta när något behöver flera rader? eller man ska kunna ha frågor med fler än 16x2 tecken
 // den resettar inte question_time efter tiden är ute. den resettar inte inställda tiden heller. sluta
 
-// den ska kunna spara användarens input om rätt och fel ?? EEPROM SKITEN?
-
-
 // fråga, svarsalternativ, rätt svar, vikt
 // lätt = 1, mellan = 2, svår = 3, oprövad/fel = 4
 // TODO
@@ -34,12 +31,14 @@
 // 7. X motor funktion
 // 8. X LEDs
 // 9. X printa vad användaren tryckte på
-// 10. byt till pull down
+// 10. X byt till pull down
 // 11. skriv riktiga frågor
 // 12. säkerställ att det är möjligt att lägga till en ny sida av frågor om det behövs
+// 13. snyggare å, ä, ö
 
 
-// tanken är att när man byter mode ska det stå 
+// den säger done för tidigt
+// 
  
 
 
@@ -56,10 +55,10 @@ LiquidCrystal_I2C lcd(0x27, 16, 2);
 
 int timer = 1500; // default tid i setup mode
 #define TIMER_INTERVALL 300 // hur mycket man ökar och minskar timern med
-#define OPEN_TIME 2000 // hur länge motorn öppnar 
-#define CLOSE_TIME 2000 // hur länge motorn stänger
+#define OPEN_TIME 1200 // hur länge motorn öppnar 
+#define CLOSE_TIME 1500 // hur länge motorn stänger
 #define BLINKS 5 // hur ofta lampan ska blinka vid färdig timer (sekunder typ)
-// hur länge frågor och svar visas
+#define PAGE_TIME 20 // hur länge frågor och svar visas
 
 #define AA byte(0)  // å
 #define AE byte(1)  // ä
@@ -67,25 +66,27 @@ int timer = 1500; // default tid i setup mode
 
 unsigned long startTime; // store start time;
 
+int led1=12;
+int led2=11;
+int led3=10;
+int alt_1=9;
+int alt_2=8;
+int alt_3=7;
+int alt_4=6;
+int question_pin =5;
 
-int question_pin =11;
-int alt_1=10;
-int alt_2=9;
-int alt_3=8;
-int alt_4=7;
-int led=2;
-int led1=3;
-int led2=6;
-int led3=12;
 
 int question_time = 0; 
 int timer_on =0;
 int index=0;
 int chosenDifficulty = 0;
 bool difficultyChosen = false;
+bool timerStarted = false; 
+bool sessionPicked = false;
+
 
 // MOTOR
-const int motor_pin3 = 5;  
+const int motor_pin3 = 3;  
 const int motor_pin4 = 4;
 bool AnsCorrect = false;
 int correctSoFar = 0;
@@ -98,15 +99,23 @@ int sessionIndex = 0;
 #define EEPROM_START 0
 
 ///////////// FRÅGELÄGE ///////////////////////////////
-const char q000[] PROGMEM = "0. detta {a}r fr{A}ga";
-const char q001[] PROGMEM = "symbol0question? ";
-const char qab00[] PROGMEM = "A0.ans B0.ans   ";
-const char qcd00[] PROGMEM = "C0.ans D0.ans   ";
+const char q000[] PROGMEM = "C=600nF, L=6mH, ";
+const char q001[] PROGMEM = "R=6ohm in series";
+const char q000_p2[] PROGMEM = "For which angula"; // sida 2 test
+const char q001_p2[] PROGMEM = "r freq is the   "; // sida 2 test
+const char q000_p3[] PROGMEM = "impedence purely"; // sida 2 test
+const char q001_p3[] PROGMEM = "real? (μrad/s)  ";
+const char qab00[] PROGMEM = "A:60    B:360   ";
+const char qcd00[] PROGMEM = "C:36    D:600   ";
 
-const char q010[] PROGMEM = "1. this is a    ";
-const char q011[] PROGMEM = "symbol1question?";
-const char qab01[] PROGMEM = "A1.ans B1.ans   ";
-const char qcd01[] PROGMEM = "C1.ans D1.ans   ";
+const char q010[] PROGMEM = "Amplitude of    ";
+const char q011[] PROGMEM = "current in serie";
+const char q010_p2[] PROGMEM = "R=3Ω ωL=1Ω      "; // sida 2 test
+const char q011_p2[] PROGMEM = "U(top)=9cos(ωt) "; // sida 2 test
+const char q010_p3[] PROGMEM = "Answer in A     "; // sida 2 test
+const char q011_p3[] PROGMEM = "                ";
+const char qab01[] PROGMEM = "A:5.92  B:2.84  ";
+const char qcd01[] PROGMEM = "C:2.45  D:3.34   ";
 
 const char q020[] PROGMEM = "2. this is a    ";
 const char q021[] PROGMEM = "symbol2question?";
@@ -198,13 +207,60 @@ const char q191[] PROGMEM = "symbol5question?";
 const char qab19[] PROGMEM = "A19ans B5.ans   ";
 const char qcd19[] PROGMEM = "C19ans D5.ans   ";
 
-
 //                             fråga: 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19
-const uint8_t correctAns[] PROGMEM = {0, 2, 1, 2, 3, 0, 3, 2, 3, 1, 0, 2, 1, 2, 0, 2, 1, 0, 2, 3}; // rätt svar är 0.A, 1.C, 2.B
+const uint8_t correctAns[] PROGMEM = {0, 1, 1, 2, 3, 0, 3, 2, 3, 1, 0, 2, 1, 2, 0, 2, 1, 0, 2, 3}; // rätt svar är 0.A, 1.C, 2.B
 ////                         fråga: 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19
 //const uint8_t weight[] PROGMEM = {1, 2, 3, 4, 1, 2, 3, 2, 1, 4, 2, 4, 1, 4, 2, 3, 4, 2, 1, 4};
 
-uint8_t weight[NUM_QUESTIONS];
+//                           fråga: 0  1  2  3  4  5  6  7  8  9  10 11 12 13 14 15 16 17 18 19
+const uint8_t numPages[] PROGMEM = {3, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
+#define MAX_PAGES 3 // max antal sidor som en fråga kan ha
+
+const char* const qp_r0[] PROGMEM = { 
+        q000, q000_p2, q000_p3,
+        q010, nullptr, nullptr,
+        q020, nullptr, nullptr,
+        q030, nullptr, nullptr,
+        q040, nullptr, nullptr,
+        q050, nullptr, nullptr,
+        q060, nullptr, nullptr,
+        q070, nullptr, nullptr,
+        q080, nullptr, nullptr,
+        q090, nullptr, nullptr,
+        q100, nullptr, nullptr,
+        q110, nullptr, nullptr,
+        q120, nullptr, nullptr,
+        q130, nullptr, nullptr,
+        q140, nullptr, nullptr,
+        q150, nullptr, nullptr,
+        q160, nullptr, nullptr,
+        q170, nullptr, nullptr,
+        q180, nullptr, nullptr,
+        q190, nullptr, nullptr,
+};
+
+const char* const qp_r1[] PROGMEM = { 
+        q001, q001_p2, nullptr,
+        q011, nullptr, nullptr,
+        q021, nullptr, nullptr,
+        q031, nullptr, nullptr,
+        q041, nullptr, nullptr,
+        q051, nullptr, nullptr,
+        q061, nullptr, nullptr,
+        q071, nullptr, nullptr,
+        q081, nullptr, nullptr,
+        q091, nullptr, nullptr,
+        q101, nullptr, nullptr,
+        q111, nullptr, nullptr,
+        q121, nullptr, nullptr,
+        q131, nullptr, nullptr,
+        q141, nullptr, nullptr,
+        q151, nullptr, nullptr,
+        q161, nullptr, nullptr,
+        q171, nullptr, nullptr,
+        q181, nullptr, nullptr,
+        q191, nullptr, nullptr,
+};
 
 // pointers
 const char* const question_r0[] PROGMEM = {q000, q010, q020, q030, q040, q050, q060, q070, q080, q090, q100, q110, q120, q130, q140, q150, q160, q170, q180, q190};
@@ -213,15 +269,17 @@ const char* const question_r1[] PROGMEM = {q001, q011, q021, q031, q041, q051, q
 const char* const optionAB[] PROGMEM = {qab00, qab01, qab02, qab03, qab04, qab05, qab06, qab07, qab08, qab09, qab10, qab11, qab12, qab13, qab14, qab15, qab16, qab17, qab18, qab19};
 const char* const optionCD[] PROGMEM = {qcd00, qcd01, qcd02, qcd03, qcd04, qcd05, qcd06, qcd07, qcd08, qcd09, qcd10, qcd11, qcd12, qcd13, qcd14, qcd15, qcd16, qcd17, qcd18, qcd19};
 
+
+uint8_t weight[NUM_QUESTIONS];
+int  currentPage = 0;
+int  page_ticks  = 0;
 char buf[17];
 ////////////////////////////////////////////////////////////
-
 
 
 void loadWeights() {
     for (int i = 0; i < NUM_QUESTIONS; i++) {
         uint8_t val = EEPROM.read(EEPROM_START + i);
-
         if (val < 1 || val > 4) {
             weight[i] = 4; // default till svår/otestad
             EEPROM.update(EEPROM_START + i, 4);
@@ -247,6 +305,7 @@ void printChar(const char* s) {
     }
 }
 
+/////////// SPECIELLA TECKEN ///////////
 byte ae[8] = {
     B00000,
     B01010,
@@ -280,7 +339,7 @@ byte aa[8] = {
     B01111
 
 };
-
+/////////////////////////
 
 
 void setup() {
@@ -291,13 +350,13 @@ void setup() {
     lcd.createChar(1, ae);
     lcd.createChar(2, oe);
     
+    startTime = millis();
     
     pinMode(alt_1, INPUT_PULLUP);
     pinMode(alt_2, INPUT_PULLUP);
     pinMode(alt_3, INPUT_PULLUP);
     pinMode(alt_4, INPUT_PULLUP);
     pinMode(question_pin, INPUT_PULLUP);
-    pinMode(led, OUTPUT);
     pinMode(led1, OUTPUT);
     pinMode(led2, OUTPUT);
     pinMode(led3, OUTPUT);
@@ -319,63 +378,56 @@ void loop() {
     
     switch (timer_on)
     {
-        case 0:
+    case 0:
         set_timer();//if the timer isnt on then the setup timer is shown 
-        
         break;
     case 1:
         timer_mode();//if the timer is on the timer/question in shown
-    
         break;
-
     case 2:
         question_mode();
         break;
     case 3:
         feedback_mode();
         break;
-    
     }
 
     updateLEDs();
-
     delay(100);
 
 }
 
 void updateLEDs() {
-switch (timer_on) {
-    case 0: // setup
-        digitalWrite(led1, HIGH);
-        digitalWrite(led2, LOW);
-        digitalWrite(led3, LOW);
-        break;
+    switch (timer_on) {
+        case 0: // setup
+            digitalWrite(led1, HIGH);
+            digitalWrite(led2, LOW);
+            digitalWrite(led3, LOW);
+            break;
 
-    case 1: // timer
-        digitalWrite(led1, LOW);
-        digitalWrite(led2, LOW);
-        digitalWrite(led3, LOW);
-        break;
+        case 1: // timer
+            digitalWrite(led1, LOW);
+            digitalWrite(led2, LOW);
+            digitalWrite(led3, LOW);
+            break;
 
-    case 2: // question
-        digitalWrite(led1, LOW);
-        digitalWrite(led2, HIGH);
-        digitalWrite(led3, LOW);
-        break;
+        case 2: // question
+            digitalWrite(led1, LOW);
+            digitalWrite(led2, HIGH);
+            digitalWrite(led3, LOW);
+            break;
 
-    case 3: // feedback
-        if (question_time <= 10) {
-        // Correct / Incorrect screen → ALL OFF
-        digitalWrite(led1, LOW);
-        digitalWrite(led2, LOW);
-        digitalWrite(led3, LOW);
-    } else {
-        // "How hard was it?" → LED3 ON
-        digitalWrite(led1, LOW);
-        digitalWrite(led2, LOW);
-        digitalWrite(led3, HIGH);
+        case 3: // feedback
+            if (question_time <= 10 || !AnsCorrect) {
+            digitalWrite(led1, LOW);
+            digitalWrite(led2, LOW);
+            digitalWrite(led3, LOW);
+        } else {
+            digitalWrite(led1, LOW);
+            digitalWrite(led2, LOW);
+            digitalWrite(led3, HIGH);
+        }
     }
-}
 }
 
 
@@ -400,7 +452,7 @@ void timer_mode() {
     lcd.print(":");
     lcd.print(seconds < 10 ? "0" : "");
     lcd.print(seconds);
-    lcd.print(" Kvar    ");
+    lcd.print(" Left    ");
     
     seconds = timer % 60;
     minutes = (timer / 60) % 60;
@@ -415,17 +467,22 @@ void timer_mode() {
     lcd.print(":");
     lcd.print(seconds < 10 ? "0" : "");
     lcd.print(seconds);
-    lcd.print(" Totalt   ");
+    lcd.print(" Total      ");
 
     if (digitalRead(question_pin) == LOW) { // pullup
         timer_on=2;
+        if (!sessionPicked) {
         pick3Questions();
+        sessionPicked = true;
+        }
         delay(200);
         return;
 
     }
     
+    if (timerStarted) {
     timer_done(elapsed, timer);
+    }
 }
 
 void set_timer() {
@@ -435,6 +492,7 @@ void set_timer() {
     int hours = timer / 3600;
 
     lcd.setCursor(0, 0);
+    lcd.print("    ");
     lcd.print(hours < 10 ? "0" : "");
     lcd.print(hours);
     lcd.print(":");
@@ -443,10 +501,11 @@ void set_timer() {
     lcd.print(":");
     lcd.print(seconds < 10 ? "0" : "");
     lcd.print(seconds);
-    lcd.print(" Totalt   ");
+    lcd.print("    ");
+
 
     lcd.setCursor(0, 1);
-    lcd.print("OK -10 +10       ");
+    lcd.print("   Set timer!     ");
 
     
 
@@ -455,18 +514,19 @@ void set_timer() {
         if (timer > 0) timer -= TIMER_INTERVALL;
         delay(100);
       
-        }
+    }
 
-    if (digitalRead(alt_3) == LOW) // lägg till 10 sek // pullup
+    if (digitalRead(alt_1) == LOW) // lägg till 10 sek // pullup
     {
         timer += TIMER_INTERVALL;
         delay(100);
 
     }
 
-    if (digitalRead(alt_1) == LOW) // confirm tid // pullup
+    if (digitalRead(alt_4) == LOW) // confirm tid // pullup
     {
         startTime = millis();
+        timerStarted = true;
         timer_on=1;
         delay(100);
 
@@ -479,16 +539,13 @@ void set_timer() {
         //pick3Questions();
         delay(100);
     }
-
-
 }
 
 void timer_done(unsigned long elapsed, int timer) {
 // visar att tiden är ute. stannar på den sidan i några sekunder innan den går tillbaka till setup mode
     if (elapsed > timer) {
-        
         lcd.setCursor(0, 0);
-        lcd.print("DONE               ");
+        lcd.print("Done!              ");
         lcd.setCursor(0, 1);
         lcd.print("                   ");
         
@@ -503,14 +560,16 @@ void timer_done(unsigned long elapsed, int timer) {
         digitalWrite(led2, LOW);
         digitalWrite(led3, LOW);
         delay(500);
-
     }
-     open();
+    
+    open();
 
     // nästa fråga
     timer_on = 0;
     index = 0;
     question_time = 0;
+    currentPage = 0;
+    page_ticks = 0;
     }
 }
 
@@ -518,87 +577,85 @@ void timer_done(unsigned long elapsed, int timer) {
 // FRÅGEMODE
 
 void question_mode() {
-
     show_qna();
     choose_ans();
     
     if (digitalRead(question_pin) == LOW) { // pullup
-        timer_on = 1;       // go back to timer
+        timer_on = 1;      // go back to timer
+        currentPage = 0;
+        page_ticks = 0;
         delay(200);
         return;
     }
-
-    unsigned long elapsed = (millis() - startTime) / 1000;
-    timer_done(elapsed, timer);
+    if (timerStarted) {  
+        unsigned long elapsed = (millis() - startTime) / 1000;
+        timer_done(elapsed, timer);
+    }
 }
 
-void printProgmem(const char* const* table, int index, int row) {
-    strcpy_P(buf, (char*)pgm_read_word(&table[index]));
-    lcd.setCursor(0, row);
-    lcd.print(buf);
 
+void printPageRow(const char* const* table, int qIdx, int pageIdx, int lcdRow)
+{
+    const char* str = (const char*)pgm_read_word(&table[qIdx * MAX_PAGES + pageIdx]);
+    if (!str) return;  // nullptr → no page, skip
+
+    strcpy_P(buf, str);
+    lcd.setCursor(0, lcdRow);
+    printChar(buf);   // handles {a}/{o}/{A} escape sequences
 }
-
-void printQue() {
-    printProgmem(question_r0, index, 0);
-    printProgmem(question_r1, index, 1);
-    /*lcd.setCursor(13, 0); 
-    lcd.print("W");
-    lcd.print(weight[index]);*/
-}
-
-void printAns() {
-    printProgmem(optionAB, index, 0);
-    printProgmem(optionCD, index, 1);
-}
-
 
 void show_qna() {
-    if (question_time <50)
-    {
-        question_time +=1;
-        printQue();
+    uint8_t np = pgm_read_byte(&numPages[index]);   // question page count
+
+    if (currentPage < np) {
+        // visa frågor
+        printPageRow(qp_r0, index, currentPage, 0);
+        printPageRow(qp_r1, index, currentPage, 1);
+
+        page_ticks++;
+        if (page_ticks >= PAGE_TIME) {
+            page_ticks = 0;
+            currentPage++;          // gå vidare till nästa sida/svar
+        }
+
+    } else {
+        // visa svarsalternativ
+        strcpy_P(buf, (char*)pgm_read_word(&optionAB[index]));
+        lcd.setCursor(0, 0); lcd.print(buf);
+
+        strcpy_P(buf, (char*)pgm_read_word(&optionCD[index]));
+        lcd.setCursor(0, 1); lcd.print(buf);
+
+        page_ticks++;
+        if (page_ticks >= PAGE_TIME) { // tbx till första sidan
+            page_ticks  = 0;
+            currentPage = 0;
+        }
     }
-    else if (question_time >= 50 && question_time <= 100 )
-    {
-        printAns();
-        question_time +=1;
-    }
-    else{question_time = 0;}
 }
 
 void choose_ans() {
+    uint8_t np = pgm_read_byte(&numPages[index]);
+
+    // Don't register answers while question text pages are shown
+    if (currentPage < np) return;
+
     uint8_t correct = pgm_read_byte(&correctAns[index]);
+    int pressed = -1;
 
-    if (digitalRead(alt_1) == LOW) { //pullup
-        AnsCorrect = (correct == 0);
-        timer_on = 3;
-     
-        
-    }
-    else if (digitalRead(alt_2) == LOW) { // pullup
-        AnsCorrect = (correct == 1);
-        timer_on = 3;
+    if      (digitalRead(alt_1) == LOW) pressed = 0;
+    else if (digitalRead(alt_2) == LOW) pressed = 1;
+    else if (digitalRead(alt_3) == LOW) pressed = 2;
+    else if (digitalRead(alt_4) == LOW) pressed = 3;
 
-    }
-    else if (digitalRead(alt_3) == LOW) { // pullup
-        AnsCorrect = (correct == 2);
-        timer_on = 3;
-  
-    
-    }
-    else if (digitalRead(alt_4) == LOW) { // pullup
-        AnsCorrect = (correct == 3);
-        timer_on = 3;
-        
-    }
+    if (pressed >= 0) {
+        AnsCorrect = (correct == pressed);
+        if (AnsCorrect) correctSoFar++;
 
-    if (timer_on == 3) {
-        if (AnsCorrect) {
-            correctSoFar++;
-        }
+        timer_on      = 3;
         question_time = 0;
-      
+        currentPage   = 0;      // ← reset for next question
+        page_ticks    = 0;
     }
 }
 
@@ -607,7 +664,6 @@ void choose_ans() {
 void feedback_mode() {
     if (question_time <= 10) {
         lcd.setCursor(0, 0);
-
         if (AnsCorrect) {
             lcd.print("Correct!         ");
             lcd.setCursor(0, 1);
@@ -625,9 +681,9 @@ void feedback_mode() {
 
     if (question_time > 10 && !difficultyChosen && AnsCorrect) {
         lcd.setCursor(0, 0);
-        printChar("Hur sv{A}r var    ");
+        lcd.print("How hard was    ");
         lcd.setCursor(0, 1);
-        printChar("fr{A}gan {A}{a}{o}    ");
+        lcd.print("this question?  ");
    
         if (digitalRead(alt_1) == LOW) { //pullup
             chosenDifficulty = 1;
@@ -644,14 +700,21 @@ void feedback_mode() {
             return;
         }
 
-        } else {
+        } else if (!AnsCorrect && !difficultyChosen) {
             weight[index] = 4;
             EEPROM.update(EEPROM_START + index, 4);
+            difficultyChosen = true;
+            return;
         }
     
     if (difficultyChosen) {
-        lcd.setCursor(0, 0);
 
+        if (AnsCorrect && chosenDifficulty > 0) {
+            weight[index] = chosenDifficulty;
+            EEPROM.update(EEPROM_START + index, chosenDifficulty);
+        }
+
+        lcd.setCursor(0, 0);
         if (chosenDifficulty == 1) lcd.print("Easy            ");
         else if (chosenDifficulty == 2) lcd.print("Medium          ");
         else if (chosenDifficulty == 3) lcd.print("Hard            ");
@@ -664,11 +727,13 @@ void feedback_mode() {
             return; 
         }
         difficultyChosen = false;
+        chosenDifficulty = 0;
     }
 
     sessionIndex++; 
 
     if (sessionIndex >= 3) {
+        sessionPicked = false;
         if (correctSoFar >= 3) {
             timer_done(timer + 1, timer);
             timer_on = 0;
@@ -680,6 +745,8 @@ void feedback_mode() {
         index = 0;
         correctSoFar = 0;
         question_time = 0;
+        currentPage = 0;
+        page_ticks = 0;
 
         return;
     }
@@ -687,6 +754,8 @@ void feedback_mode() {
         index = selectedQuestions[sessionIndex];
         timer_on = 2;
         question_time = 0;
+        currentPage = 0;
+        page_ticks = 0;
 
 }
          
@@ -699,7 +768,6 @@ void resetSession() {
 
 int pickWeightedQuestion() {
     int total = 0;
-
     for (int i = 0; i < NUM_QUESTIONS; i++) {
         // ser till så att den inte redan är med i omgången. summerar ihop alla vikter
         if (!usedInSession[i]) {
@@ -716,10 +784,8 @@ int pickWeightedQuestion() {
     for (int i = 0; i < NUM_QUESTIONS; i++) {
         // subtrahera vikt från random tal. frågan som random tal blir negativ är frågan som ska visas
         if (usedInSession[i]) continue;
-
-                //uint8_t w = pgm_read_byte(&weight[i]); 
-                uint8_t w = weight[i];
-
+        //uint8_t w = pgm_read_byte(&weight[i]); 
+        uint8_t w = weight[i];
 
         if (r < w) {
             usedInSession[i] = true;
