@@ -528,6 +528,7 @@ void set_timer() {
         startTime = millis();
         timerStarted = true;
         timer_on=1;
+        close();
         delay(100);
 
     }
